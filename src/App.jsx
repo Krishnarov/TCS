@@ -1,0 +1,76 @@
+
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
+
+// Website Components
+import WebsiteLayout from './components/website/WebsiteLayout';
+import Home from './pages/website/Home';
+import About from './pages/website/About';
+import OurTeam from './pages/website/OurTeam.jsx';
+import Industries from './pages/website/Industries';
+import Services from './pages/website/Services';
+import Clients from './pages/website/Clients';
+
+
+import Projects from './pages/website/Projects';
+import Blog from './pages/website/Blog';
+import Career from './pages/website/Career';
+import Contact from './pages/website/Contact';
+
+// Admin Components
+import AdminLayout from './components/admin/AdminLayout';
+import AdminLogin from './pages/auth/AdminLogin';
+import Dashboard from './pages/admin/Dashboard';
+import BlogManage from './pages/admin/BlogManage';
+import CareerManage from './pages/admin/CareerManage';
+import ContactManage from './pages/admin/ContactManage';
+import Certification from './pages/website/Certification.jsx';
+
+// Protected Route Component
+const ProtectedRoute = ({ children }) => {
+  const { isAuthenticated } = useAuth();
+  return isAuthenticated ? children : <Navigate to="/admin/login" />;
+};
+
+function App() {
+  return (
+    <AuthProvider>
+      <Router>
+        <Routes>
+          {/* Website Routes */}
+          <Route path="/" element={<WebsiteLayout />}>
+            <Route index element={<Home />} />
+            <Route path="about" element={<About />} />
+            <Route path="team" element={<OurTeam />} />
+            <Route path="industries" element={<Industries />} />
+            <Route path="services" element={<Services />} />
+            <Route path="clients" element={<Clients />} />
+            <Route path="certification" element={<Certification />} />
+
+            <Route path="projects" element={<Projects />} />
+            <Route path="blog" element={<Blog />} />
+            <Route path="career" element={<Career />} />
+            <Route path="contact" element={<Contact />} />
+          </Route>
+
+          {/* Admin Auth Routes */}
+          <Route path="/admin/login" element={<AdminLogin />} />
+
+          {/* Admin Protected Routes */}
+          <Route path="/admin" element={
+            <ProtectedRoute>
+              <AdminLayout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<Dashboard />} />
+            <Route path="blog" element={<BlogManage />} />
+            <Route path="career" element={<CareerManage />} />
+            <Route path="contact" element={<ContactManage />} />
+          </Route>
+        </Routes>
+      </Router>
+    </AuthProvider>
+  );
+}
+
+export default App;
