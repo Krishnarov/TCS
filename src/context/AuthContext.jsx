@@ -12,13 +12,14 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     // Temporary login - backend me change karenge
-    if (email === 'admin@tcs.com' && password === 'admin123') {
-      setIsAuthenticated(true);
-      setAdminUser({ email, name: 'Admin' });
-      localStorage.setItem('adminToken', 'dummy-token');
-      return true;
-    }
-    return false;
+    setIsAuthenticated(true);
+    // if (email === 'admin@tcs.com' && password === 'admin123') {
+    //   setIsAuthenticated(true);
+    //   setAdminUser({ email, name: 'Admin' });
+    //   localStorage.setItem('adminToken', 'dummy-token');
+    //   return true;
+    // }
+    return true;
   };
 
   const logout = () => {

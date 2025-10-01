@@ -46,7 +46,6 @@ function App() {
             <Route path="services" element={<Services />} />
             <Route path="clients" element={<Clients />} />
             <Route path="certification" element={<Certification />} />
-
             <Route path="projects" element={<Projects />} />
             <Route path="blog" element={<Blog />} />
             <Route path="career" element={<Career />} />
@@ -63,9 +62,9 @@ function App() {
             </ProtectedRoute>
           }>
             <Route index element={<Dashboard />} />
-            <Route path="blog" element={<BlogManage />} />
-            <Route path="career" element={<CareerManage />} />
-            <Route path="contact" element={<ContactManage />} />
+            <Route path="manegeblog" element={<BlogManage />} />
+            <Route path="managecareer" element={<CareerManage />} />
+            <Route path="contactus" element={<ContactManage />} />
           </Route>
         </Routes>
       </Router>
