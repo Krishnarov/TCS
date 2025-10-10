@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { 
-  Phone, 
-  Mail, 
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import {
+  Phone,
+  Mail,
   MapPin,
   Clock,
   Send,
@@ -10,17 +10,19 @@ import {
   MessageCircle,
   User,
   Building,
-  FileText
-} from 'lucide-react';
+  FileText,
+} from "lucide-react";
+import axiosInstance from "../../../axiosInstance";
+import { toast } from "react-toastify";
 
 const Contact = () => {
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    company: '',
-    phone: '',
-    subject: '',
-    message: ''
+    name: "",
+    email: "",
+    company: "",
+    phone: "",
+    subject: "",
+    message: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -29,85 +31,104 @@ const Contact = () => {
   const fadeInUp = {
     initial: { opacity: 0, y: 60 },
     animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.6 }
+    transition: { duration: 0.6 },
   };
 
   const staggerContainer = {
     animate: {
       transition: {
-        staggerChildren: 0.1
-      }
-    }
+        staggerChildren: 0.1,
+      },
+    },
   };
 
   // Contact information from PDF
   const contactInfo = [
     {
       icon: <Phone className="w-6 h-6" />,
-      title: 'Phone Number',
-      details: '+91 8292111172',
-      description: 'Mon - Sat: 8:00 - 18:00',
-      color: 'from-blue-500 to-blue-600'
+      title: "Phone Number",
+      details: "+91 8292111172",
+      description: "Mon - Sat: 8:00 - 18:00",
+      color: "from-blue-500 to-blue-600",
     },
     {
       icon: <Mail className="w-6 h-6" />,
-      title: 'Email Address',
-      details: 'jyadavst@gmail.com',
-      description: 'Send us your queries anytime',
-      color: 'from-green-500 to-green-600'
+      title: "Email Address",
+      details: "jyadavst@gmail.com",
+      description: "Send us your queries anytime",
+      color: "from-green-500 to-green-600",
     },
     {
       icon: <MapPin className="w-6 h-6" />,
-      title: 'Office Address',
-      details: 'Elysium, H-905, Shantigram',
-      description: 'Ahmedabad - 382421, Gujarat, India',
-      color: 'from-purple-500 to-purple-600'
+      title: "Office Address",
+      details: "Elysium, H-905, Shantigram",
+      description: "Ahmedabad - 382421, Gujarat, India",
+      color: "from-purple-500 to-purple-600",
     },
     {
       icon: <Clock className="w-6 h-6" />,
-      title: 'Working Hours',
-      details: 'Monday - Saturday',
-      description: '8:00 AM - 6:00 PM',
-      color: 'from-orange-500 to-orange-600'
-    }
+      title: "Working Hours",
+      details: "Monday - Saturday",
+      description: "8:00 AM - 6:00 PM",
+      color: "from-orange-500 to-orange-600",
+    },
   ];
 
   // Services for contact form
   const services = [
-    'Structural Fabrication & Erection',
-    'Piping Fabrication & Erection',
-    'Mechanical Equipment Erection',
-    'Electrical Works',
-    'Painting Services',
-    'Labor Supply',
-    'HDPE Fabrication',
-    'ESP Commissioning'
+    "Structural Fabrication & Erection",
+    "Piping Fabrication & Erection",
+    "Mechanical Equipment Erection",
+    "Electrical Works",
+    "Painting Services",
+    "Labor Supply",
+    "HDPE Fabrication",
+    "ESP Commissioning",
   ];
 
   const handleInputChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
+    console.log(formData);
     
-    // Simulate form submission
-    setTimeout(() => {
+    const res = await axiosInstance.post(`/contact`, formData);
+    console.log(res);
+    if(res.data.success){
       setIsSubmitting(false);
+      toast.success(res.data.message)
       setIsSubmitted(true);
       setFormData({
-        name: '',
-        email: '',
-        company: '',
-        phone: '',
-        subject: '',
-        message: ''
+        name: "",
+        email: "",
+        company: "",
+        phone: "",
+        subject: "",
+        message: "",
       });
-    }, 2000);
+      
+    }
+    
+
+    // // Simulate form submission
+    // setTimeout(() => {
+    //   setIsSubmitting(false);
+    //   setIsSubmitted(true);
+    //   setFormData({
+    //     name: "",
+    //     email: "",
+    //     company: "",
+    //     phone: "",
+    //     subject: "",
+    //     message: "",
+    //   });
+    // }, 2000);
   };
 
   return (
@@ -115,11 +136,14 @@ const Contact = () => {
       {/* Hero Banner */}
       <section className="relative py-20 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 overflow-hidden">
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-          }}></div>
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+            }}
+          ></div>
         </div>
-        
+
         <div className="container mx-auto px-6 relative z-10">
           <motion.div
             initial="initial"
@@ -132,7 +156,9 @@ const Contact = () => {
               className="inline-flex items-center space-x-2 bg-yellow-500/20 border border-yellow-500/30 rounded-full px-4 py-2 mb-6"
             >
               <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
-              <span className="text-yellow-500 text-sm font-semibold">Get In Touch</span>
+              <span className="text-yellow-500 text-sm font-semibold">
+                Get In Touch
+              </span>
             </motion.div>
 
             <motion.h1
@@ -146,8 +172,8 @@ const Contact = () => {
               variants={fadeInUp}
               className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed"
             >
-              Ready to start your project? Get in touch with our team for expert construction 
-              solutions and personalized service.
+              Ready to start your project? Get in touch with our team for expert
+              construction solutions and personalized service.
             </motion.p>
           </motion.div>
         </div>
@@ -165,13 +191,16 @@ const Contact = () => {
           >
             <div className="inline-flex items-center space-x-2 bg-yellow-500/20 border border-yellow-500/30 rounded-full px-4 py-2 mb-4">
               <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
-              <span className="text-yellow-500 text-sm font-semibold">Contact Information</span>
+              <span className="text-yellow-500 text-sm font-semibold">
+                Contact Information
+              </span>
             </div>
             <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
               Get In <span className="text-yellow-500">Touch</span>
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              We're here to help you with your construction needs. Reach out to us through any of these channels.
+              We're here to help you with your construction needs. Reach out to
+              us through any of these channels.
             </p>
           </motion.div>
 
@@ -186,12 +215,20 @@ const Contact = () => {
                 whileHover={{ scale: 1.05 }}
                 className="bg-white rounded-2xl shadow-lg p-8 text-center hover:shadow-xl transition-all duration-300 border border-gray-100"
               >
-                <div className={`w-16 h-16 bg-gradient-to-r ${item.color} rounded-2xl flex items-center justify-center mx-auto mb-6 text-white`}>
+                <div
+                  className={`w-16 h-16 bg-gradient-to-r ${item.color} rounded-2xl flex items-center justify-center mx-auto mb-6 text-white`}
+                >
                   {item.icon}
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">{item.title}</h3>
-                <p className="text-gray-800 font-semibold text-lg mb-2">{item.details}</p>
-                <p className="text-gray-600 leading-relaxed">{item.description}</p>
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                  {item.title}
+                </h3>
+                <p className="text-gray-800 font-semibold text-lg mb-2">
+                  {item.details}
+                </p>
+                <p className="text-gray-600 leading-relaxed">
+                  {item.description}
+                </p>
               </motion.div>
             ))}
           </div>
@@ -213,8 +250,12 @@ const Contact = () => {
               <div className="flex items-center space-x-3 mb-8">
                 <MessageCircle className="w-8 h-8 text-yellow-500" />
                 <div>
-                  <h2 className="text-3xl font-bold text-gray-900">Send us a Message</h2>
-                  <p className="text-gray-600">We'll get back to you within 24 hours</p>
+                  <h2 className="text-3xl font-bold text-gray-900">
+                    Send us a Message
+                  </h2>
+                  <p className="text-gray-600">
+                    We'll get back to you within 24 hours
+                  </p>
                 </div>
               </div>
 
@@ -225,7 +266,9 @@ const Contact = () => {
                   className="text-center py-12"
                 >
                   <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Message Sent Successfully!</h3>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                    Message Sent Successfully!
+                  </h3>
                   <p className="text-gray-600 mb-6">
                     Thank you for contacting us. We'll get back to you soon.
                   </p>
@@ -345,8 +388,8 @@ const Contact = () => {
                     whileTap={{ scale: isSubmitting ? 1 : 0.98 }}
                     className={`w-full py-4 px-6 rounded-lg font-bold text-lg transition-all duration-300 flex items-center justify-center space-x-2 ${
                       isSubmitting
-                        ? 'bg-gray-400 cursor-not-allowed'
-                        : 'bg-yellow-500 hover:bg-yellow-600 text-gray-900'
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : "bg-yellow-500 hover:bg-yellow-600 text-gray-900"
                     }`}
                   >
                     {isSubmitting ? (
@@ -383,11 +426,16 @@ const Contact = () => {
                   </div>
                 </div>
                 <div className="p-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-4">Visit Our Office</h3>
+                  <h3 className="text-xl font-bold text-gray-900 mb-4">
+                    Visit Our Office
+                  </h3>
                   <div className="space-y-2 text-gray-600">
                     <p className="flex items-center space-x-2">
                       <MapPin className="w-4 h-4 text-yellow-500" />
-                      <span>Elysium, H-905, Shantigram, Ahmedabad - 382421, Gujarat, India</span>
+                      <span>
+                        Elysium, H-905, Shantigram, Ahmedabad - 382421, Gujarat,
+                        India
+                      </span>
                     </p>
                     <p className="flex items-center space-x-2">
                       <Clock className="w-4 h-4 text-yellow-500" />
@@ -401,18 +449,25 @@ const Contact = () => {
               <div className="bg-gradient-to-br from-yellow-500 to-orange-500 rounded-2xl p-8 text-white">
                 <h3 className="text-2xl font-bold mb-4">Quick Contact</h3>
                 <p className="mb-6">
-                  Need immediate assistance? Call us directly for quick project consultations.
+                  Need immediate assistance? Call us directly for quick project
+                  consultations.
                 </p>
                 <div className="space-y-3">
                   <div className="flex items-center space-x-3">
                     <Phone className="w-5 h-5" />
-                    <a href="tel:+918292111172" className="font-semibold text-lg hover:underline">
+                    <a
+                      href="tel:+918292111172"
+                      className="font-semibold text-lg hover:underline"
+                    >
                       +91 8292111172
                     </a>
                   </div>
                   <div className="flex items-center space-x-3">
                     <Mail className="w-5 h-5" />
-                    <a href="mailto:jyadavst@gmail.com" className="font-semibold text-lg hover:underline">
+                    <a
+                      href="mailto:jyadavst@gmail.com"
+                      className="font-semibold text-lg hover:underline"
+                    >
                       jyadavst@gmail.com
                     </a>
                   </div>
@@ -421,7 +476,9 @@ const Contact = () => {
 
               {/* Services Overview */}
               <div className="bg-white rounded-2xl shadow-xl p-8">
-                <h3 className="text-2xl font-bold text-gray-900 mb-6">Our Services</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-6">
+                  Our Services
+                </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {services.slice(0, 6).map((service, index) => (
                     <div key={index} className="flex items-center space-x-2">
@@ -450,7 +507,8 @@ const Contact = () => {
               Start Your <span className="text-yellow-500">Project</span> Today
             </h2>
             <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-              Contact us now for a free consultation and project estimate. Let's build something great together!
+              Contact us now for a free consultation and project estimate. Let's
+              build something great together!
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <a

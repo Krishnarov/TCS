@@ -27,6 +27,7 @@ const AdminLogin = () => {
     setIsLoading(true);
     
     const success = await login(email, password);
+    
     if (success) {
       navigate('/admin');
     } else {
@@ -187,24 +188,6 @@ const AdminLogin = () => {
                 )}
               </motion.button>
             </motion.form>
-
-            {/* Demo Credentials */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.6 }}
-              className="mt-8 p-4 bg-gray-50 rounded-xl border border-gray-200"
-            >
-              <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center">
-                <Building2 className="w-4 h-4 mr-1 text-yellow-600" />
-                Demo Credentials
-              </h3>
-              <div className="space-y-1 text-xs text-gray-600">
-                <p><strong>Email:</strong> admin@tcs.com</p>
-                <p><strong>Password:</strong> admin123</p>
-              </div>
-            </motion.div>
-
             {/* Security Notice */}
             <motion.div
               initial={{ opacity: 0 }}

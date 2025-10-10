@@ -1,5 +1,4 @@
-
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route ,Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
 // Website Components
@@ -10,12 +9,11 @@ import OurTeam from './pages/website/OurTeam.jsx';
 import Industries from './pages/website/Industries';
 import Services from './pages/website/Services';
 import Clients from './pages/website/Clients';
-
-
 import Projects from './pages/website/Projects';
 import Blog from './pages/website/Blog';
 import Career from './pages/website/Career';
 import Contact from './pages/website/Contact';
+import { ToastContainer } from 'react-toastify';
 
 // Admin Components
 import AdminLayout from './components/admin/AdminLayout';
@@ -25,10 +23,23 @@ import BlogManage from './pages/admin/BlogManage';
 import CareerManage from './pages/admin/CareerManage';
 import ContactManage from './pages/admin/ContactManage';
 import Certification from './pages/website/Certification.jsx';
+import BlogPages from './components/website/BlogPages.jsx';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
   return isAuthenticated ? children : <Navigate to="/admin/login" />;
 };
 
@@ -48,6 +59,7 @@ function App() {
             <Route path="certification" element={<Certification />} />
             <Route path="projects" element={<Projects />} />
             <Route path="blog" element={<Blog />} />
+            <Route path="blog/:id" element={<BlogPages />} />
             <Route path="career" element={<Career />} />
             <Route path="contact" element={<Contact />} />
           </Route>
@@ -56,11 +68,14 @@ function App() {
           <Route path="/admin/login" element={<AdminLogin />} />
 
           {/* Admin Protected Routes */}
-          <Route path="/admin" element={
-            <ProtectedRoute>
-              <AdminLayout />
-            </ProtectedRoute>
-          }>
+          <Route 
+            path="/admin" 
+            element={
+              <ProtectedRoute>
+                <AdminLayout />
+              </ProtectedRoute>
+            }
+          >
             <Route index element={<Dashboard />} />
             <Route path="manegeblog" element={<BlogManage />} />
             <Route path="managecareer" element={<CareerManage />} />
@@ -68,6 +83,7 @@ function App() {
           </Route>
         </Routes>
       </Router>
+      <ToastContainer />
     </AuthProvider>
   );
 }

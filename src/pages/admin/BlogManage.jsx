@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Plus,
   Edit,
@@ -23,94 +23,55 @@ import {
   Globe,
   Clock,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Star,
+  ChevronDown,
+  ChevronUp,
+  RefreshCw
 } from 'lucide-react';
+import axios from '../../../axiosInstance';
+import { toast } from 'react-toastify';
 
 const BlogManage = () => {
-  const [blogs, setBlogs] = useState([
-    {
-      id: 1,
-      title: 'Advancements in Structural Fabrication for Heavy Industries',
-      excerpt: 'Exploring the latest techniques in structural fabrication and erection for heavy industrial applications with precision engineering.',
-      category: 'Structural Engineering',
-      author: 'Jitendra Yadav',
-      status: 'published',
-      date: '2023-12-15',
-      views: 1247,
-      comments: 23,
-      likes: 45,
-      readTime: '6 min read',
-      featured: true,
-      tags: ['fabrication', 'structures', 'industrial']
-    },
-    {
-      id: 2,
-      title: 'Best Practices in Piping System Installation and Maintenance',
-      excerpt: 'Comprehensive guide to piping fabrication, installation, and maintenance for industrial applications with quality assurance.',
-      category: 'Piping Systems',
-      author: 'TCS Engineering Team',
-      status: 'published',
-      date: '2023-12-10',
-      views: 892,
-      comments: 15,
-      likes: 32,
-      readTime: '8 min read',
-      featured: false,
-      tags: ['piping', 'installation', 'maintenance']
-    },
-    {
-      id: 3,
-      title: 'Electrical Works Safety Protocols in Industrial Construction',
-      excerpt: 'Essential safety measures and protocols for electrical works in industrial construction projects ensuring zero incidents.',
-      category: 'Electrical Systems',
-      author: 'Safety Department',
-      status: 'draft',
-      date: '2023-12-05',
-      views: 0,
-      comments: 0,
-      likes: 0,
-      readTime: '5 min read',
-      featured: false,
-      tags: ['electrical', 'safety', 'protocols']
-    },
-    {
-      id: 4,
-      title: 'Mechanical Equipment Erection: Precision and Quality Standards',
-      excerpt: 'Understanding the precision requirements and quality standards in mechanical equipment erection for industrial facilities.',
-      category: 'Mechanical Works',
-      author: 'Technical Team',
-      status: 'published',
-      date: '2023-11-28',
-      views: 634,
-      comments: 12,
-      likes: 28,
-      readTime: '7 min read',
-      featured: true,
-      tags: ['mechanical', 'equipment', 'quality']
-    }
-  ]);
-
+  const [blogs, setBlogs] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showEditor, setShowEditor] = useState(false);
   const [editingBlog, setEditingBlog] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+  const [viewMode, setViewMode] = useState('grid');
+  const [saving, setSaving] = useState(false);
 
   const [blogData, setBlogData] = useState({
     title: '',
+    slug: '',
     excerpt: '',
     content: '',
     category: '',
     tags: '',
-    author: '',
+    author: {
+      name: 'Admin',
+      email: 'admin@triveniconstruction.com',
+      bio: 'Administrator'
+    },
     status: 'draft',
-    featuredImage: '',
-    readTime: '',
-    featured: false
+    featuredImage: {
+      url: '',
+      alt: '',
+      caption: ''
+    },
+    readingTime: '',
+    featured: false,
+    allowComments: true,
+    seo: {
+      metaTitle: '',
+      metaDescription: '',
+      keywords: ''
+    }
   });
 
-  // Categories based on PDF services
+  // Categories
   const categories = [
     'Structural Engineering',
     'Piping Systems',
@@ -118,36 +79,104 @@ const BlogManage = () => {
     'Electrical Systems',
     'Safety Standards',
     'Industry Insights',
-    'Project Management',
-    'Innovation & Technology'
+    'Construction',
+    'Technology',
+    'Sustainability'
   ];
 
-  const statusColors = {
-    published: 'bg-green-100 text-green-800 border-green-200',
-    draft: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-    archived: 'bg-gray-100 text-gray-800 border-gray-200'
+  // Fetch blogs from API
+  const fetchBlogs = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get('/blogs?limit=100');
+      if (res.data.success) {
+        setBlogs(res.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching blogs:', error);
+      toast.error('Failed to load blogs');
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    fetchBlogs();
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setBlogData(prev => ({ 
-      ...prev, 
-      [name]: type === 'checkbox' ? checked : value 
-    }));
+    
+    if (name.startsWith('seo.')) {
+      const seoField = name.split('.')[1];
+      setBlogData(prev => ({
+        ...prev,
+        seo: {
+          ...prev.seo,
+          [seoField]: value
+        }
+      }));
+    } else if (name.startsWith('featuredImage.')) {
+      const imageField = name.split('.')[1];
+      setBlogData(prev => ({
+        ...prev,
+        featuredImage: {
+          ...prev.featuredImage,
+          [imageField]: value
+        }
+      }));
+    } else if (name.startsWith('author.')) {
+      const authorField = name.split('.')[1];
+      setBlogData(prev => ({
+        ...prev,
+        author: {
+          ...prev.author,
+          [authorField]: value
+        }
+      }));
+    } else {
+      setBlogData(prev => ({ 
+        ...prev, 
+        [name]: type === 'checkbox' ? checked : value 
+      }));
+    }
+  };
+
+  const generateSlug = (title) => {
+    return title
+      .toLowerCase()
+      .replace(/[^a-zA-Z0-9]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
   };
 
   const handleCreateNew = () => {
     setBlogData({
       title: '',
+      slug: '',
       excerpt: '',
-      content: '',
+      content: '<h2>Start writing your amazing content here...</h2><p>You can use HTML tags for formatting.</p>',
       category: '',
       tags: '',
-      author: 'Admin',
+      author: {
+        name: 'Admin',
+        email: 'admin@triveniconstruction.com',
+        bio: 'Administrator'
+      },
       status: 'draft',
-      featuredImage: '',
-      readTime: '',
-      featured: false
+      featuredImage: {
+        url: '',
+        alt: '',
+        caption: ''
+      },
+      readingTime: '5',
+      featured: false,
+      allowComments: true,
+      seo: {
+        metaTitle: '',
+        metaDescription: '',
+        keywords: ''
+      }
     });
     setEditingBlog(null);
     setShowEditor(true);
@@ -156,68 +185,111 @@ const BlogManage = () => {
   const handleEdit = (blog) => {
     setBlogData({
       title: blog.title,
+      slug: blog.slug,
       excerpt: blog.excerpt,
-      content: 'Your blog content goes here...',
+      content: blog.content || '<h2>Start writing your amazing content here...</h2>',
       category: blog.category,
       tags: blog.tags?.join(', ') || '',
-      author: blog.author,
+      author: blog.author || {
+        name: 'Admin',
+        email: 'admin@triveniconstruction.com',
+        bio: 'Administrator'
+      },
       status: blog.status,
-      featuredImage: '',
-      readTime: blog.readTime,
-      featured: blog.featured || false
+      featuredImage: blog.featuredImage || {
+        url: '',
+        alt: '',
+        caption: ''
+      },
+      readingTime: blog.readingTime?.toString() || '5',
+      featured: blog.featured || false,
+      allowComments: blog.allowComments !== false,
+      seo: blog.seo || {
+        metaTitle: '',
+        metaDescription: '',
+        keywords: ''
+      }
     });
-    setEditingBlog(blog.id);
+    setEditingBlog(blog._id);
     setShowEditor(true);
   };
 
-  const handleSave = () => {
-    if (editingBlog) {
-      // Update existing blog
-      setBlogs(prev => prev.map(blog => 
-        blog.id === editingBlog 
-          ? { 
-              ...blog, 
-              ...blogData,
-              tags: blogData.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
-              date: new Date().toISOString().split('T')[0]
-            }
-          : blog
-      ));
-    } else {
-      // Create new blog
-      const newBlog = {
-        id: Date.now(),
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+
+      // Prepare data for API
+      const submitData = {
         ...blogData,
         tags: blogData.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
-        date: new Date().toISOString().split('T')[0],
-        views: 0,
-        comments: 0,
-        likes: 0,
-        readTime: blogData.readTime || '5 min read'
+        readingTime: parseInt(blogData.readingTime) || 5,
+        slug: blogData.slug || generateSlug(blogData.title)
       };
-      setBlogs(prev => [newBlog, ...prev]);
+
+      let response;
+      if (editingBlog) {
+        // Update existing blog
+        response = await axios.put(`/blogs/${editingBlog}`, submitData);
+        toast.success('Blog updated successfully!');
+      } else {
+        // Create new blog
+        response = await axios.post('/blogs', submitData);
+        toast.success('Blog created successfully!');
+      }
+
+      if (response.data.success) {
+        setShowEditor(false);
+        setEditingBlog(null);
+        fetchBlogs(); // Refresh the list
+      }
+    } catch (error) {
+      console.error('Error saving blog:', error);
+      toast.error(error.response?.data?.message || 'Failed to save blog');
+    } finally {
+      setSaving(false);
     }
-    
-    setShowEditor(false);
-    setEditingBlog(null);
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm('Are you sure you want to delete this blog post?')) {
-      setBlogs(prev => prev.filter(blog => blog.id !== id));
+  const handleDelete = async (id) => {
+    if (window.confirm('Are you sure you want to delete this blog post? This action cannot be undone.')) {
+      try {
+        await axios.delete(`/blogs/${id}`);
+        toast.success('Blog deleted successfully!');
+        fetchBlogs(); // Refresh the list
+      } catch (error) {
+        console.error('Error deleting blog:', error);
+        toast.error('Failed to delete blog');
+      }
     }
   };
 
-  const handleStatusChange = (id, newStatus) => {
-    setBlogs(prev => prev.map(blog => 
-      blog.id === id ? { ...blog, status: newStatus } : blog
-    ));
+  const handleStatusChange = async (id, newStatus) => {
+    try {
+      await axios.put(`/blogs/${id}`, { status: newStatus });
+      toast.success(`Blog ${newStatus} successfully!`);
+      fetchBlogs(); // Refresh the list
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast.error('Failed to update status');
+    }
   };
 
+  const handleFeaturedToggle = async (id, currentFeatured) => {
+    try {
+      await axios.put(`/blogs/${id}`, { featured: !currentFeatured });
+      toast.success(`Blog ${!currentFeatured ? 'added to' : 'removed from'} featured!`);
+      fetchBlogs(); // Refresh the list
+    } catch (error) {
+      console.error('Error toggling featured:', error);
+      toast.error('Failed to update featured status');
+    }
+  };
+
+  // Filter blogs
   const filteredBlogs = blogs.filter(blog => {
     const matchesSearch = blog.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          blog.excerpt.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         blog.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+                         (blog.tags && blog.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())));
     const matchesCategory = selectedCategory === 'all' || blog.category === selectedCategory;
     const matchesStatus = selectedStatus === 'all' || blog.status === selectedStatus;
     
@@ -230,12 +302,23 @@ const BlogManage = () => {
     published: blogs.filter(blog => blog.status === 'published').length,
     drafts: blogs.filter(blog => blog.status === 'draft').length,
     featured: blogs.filter(blog => blog.featured).length,
-    totalViews: blogs.reduce((sum, blog) => sum + blog.views, 0),
-    totalComments: blogs.reduce((sum, blog) => sum + blog.comments, 0)
+    totalViews: blogs.reduce((sum, blog) => sum + (blog.views || 0), 0),
+    totalComments: blogs.reduce((sum, blog) => sum + (blog.comments || 0), 0)
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <RefreshCw className="w-12 h-12 text-yellow-500 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Loading blogs...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
         <div>
@@ -243,6 +326,15 @@ const BlogManage = () => {
           <p className="text-gray-600 mt-2">Create, edit, and manage your blog content</p>
         </div>
         <div className="flex items-center space-x-3 mt-4 lg:mt-0">
+          {/* Refresh Button */}
+          <button
+            onClick={fetchBlogs}
+            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-all duration-200"
+            title="Refresh"
+          >
+            <RefreshCw className="w-5 h-5" />
+          </button>
+
           {/* View Toggle */}
           <div className="flex bg-gray-100 rounded-lg p-1">
             <button
@@ -290,65 +382,42 @@ const BlogManage = () => {
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-              <p className="text-sm text-gray-600">Total Posts</p>
-            </div>
-            <FileText className="w-8 h-8 text-blue-500" />
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{stats.published}</p>
-              <p className="text-sm text-gray-600">Published</p>
-            </div>
-            <Globe className="w-8 h-8 text-green-500" />
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{stats.drafts}</p>
-              <p className="text-sm text-gray-600">Drafts</p>
-            </div>
-            <BookOpen className="w-8 h-8 text-yellow-500" />
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{stats.featured}</p>
-              <p className="text-sm text-gray-600">Featured</p>
-            </div>
-            <Star className="w-8 h-8 text-purple-500" />
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalViews}</p>
-              <p className="text-sm text-gray-600">Total Views</p>
-            </div>
-            <BarChart3 className="w-8 h-8 text-orange-500" />
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalComments}</p>
-              <p className="text-sm text-gray-600">Comments</p>
-            </div>
-            <MessageCircle className="w-8 h-8 text-indigo-500" />
-          </div>
-        </div>
+        <StatCard 
+          title="Total Posts" 
+          value={stats.total} 
+          icon={FileText} 
+          color="blue" 
+        />
+        <StatCard 
+          title="Published" 
+          value={stats.published} 
+          icon={Globe} 
+          color="green" 
+        />
+        <StatCard 
+          title="Drafts" 
+          value={stats.drafts} 
+          icon={BookOpen} 
+          color="yellow" 
+        />
+        <StatCard 
+          title="Featured" 
+          value={stats.featured} 
+          icon={Star} 
+          color="purple" 
+        />
+        <StatCard 
+          title="Total Views" 
+          value={stats.totalViews} 
+          icon={BarChart3} 
+          color="orange" 
+        />
+        <StatCard 
+          title="Comments" 
+          value={stats.totalComments} 
+          icon={MessageCircle} 
+          color="indigo" 
+        />
       </div>
 
       {/* Filters and Search */}
@@ -410,67 +479,81 @@ const BlogManage = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredBlogs.map((blog) => (
             <BlogCard 
-              key={blog.id} 
+              key={blog._id} 
               blog={blog} 
               onEdit={handleEdit}
               onDelete={handleDelete}
               onStatusChange={handleStatusChange}
+              onFeaturedToggle={handleFeaturedToggle}
             />
           ))}
         </div>
       ) : (
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Post</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Category</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Status</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Metrics</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Date</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filteredBlogs.map((blog) => (
-                  <BlogTableRow 
-                    key={blog.id} 
-                    blog={blog} 
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                    onStatusChange={handleStatusChange}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <BlogTableView 
+          blogs={filteredBlogs}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onStatusChange={handleStatusChange}
+          onFeaturedToggle={handleFeaturedToggle}
+        />
       )}
 
-      {filteredBlogs.length === 0 && (
-        <div className="text-center py-12 bg-white rounded-2xl shadow-lg border border-gray-100">
-          <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No blog posts found</h3>
-          <p className="text-gray-600 mb-6">Try adjusting your search or filters</p>
-          <button
-            onClick={handleCreateNew}
-            className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold px-6 py-3 rounded-xl transition-all duration-300 inline-flex items-center space-x-2"
-          >
-            <Plus className="w-5 h-5" />
-            <span>Create Your First Post</span>
-          </button>
-        </div>
+      {filteredBlogs.length === 0 && !loading && (
+        <EmptyState onCreateNew={handleCreateNew} />
       )}
 
-      {/* Editor Modal would go here - Same as before but improved */}
+      {/* Blog Editor Modal */}
+      <AnimatePresence>
+        {showEditor && (
+          <BlogEditor
+            blogData={blogData}
+            editingBlog={editingBlog}
+            saving={saving}
+            onInputChange={handleInputChange}
+            onSave={handleSave}
+            onClose={() => setShowEditor(false)}
+            categories={categories}
+            generateSlug={generateSlug}
+          />
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+// Stat Card Component
+const StatCard = ({ title, value, icon: Icon, color }) => {
+  const colorClasses = {
+    blue: 'text-blue-500',
+    green: 'text-green-500',
+    yellow: 'text-yellow-500',
+    purple: 'text-purple-500',
+    orange: 'text-orange-500',
+    indigo: 'text-indigo-500'
+  };
+
+  return (
+    <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-2xl font-bold text-gray-900">{value}</p>
+          <p className="text-sm text-gray-600">{title}</p>
+        </div>
+        <Icon className={`w-8 h-8 ${colorClasses[color]}`} />
+      </div>
     </div>
   );
 };
 
 // Blog Card Component for Grid View
-const BlogCard = ({ blog, onEdit, onDelete, onStatusChange }) => {
+const BlogCard = ({ blog, onEdit, onDelete, onStatusChange, onFeaturedToggle }) => {
   const [showMenu, setShowMenu] = useState(false);
+
+  const statusColors = {
+    published: 'bg-green-100 text-green-800 border-green-200',
+    draft: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+    archived: 'bg-gray-100 text-gray-800 border-gray-200'
+  };
 
   return (
     <motion.div
@@ -487,8 +570,8 @@ const BlogCard = ({ blog, onEdit, onDelete, onStatusChange }) => {
       {/* Blog Image/Placeholder */}
       <div className="h-48 bg-gradient-to-br from-gray-800 to-gray-900 relative overflow-hidden">
         <div className="absolute inset-0 bg-black bg-opacity-20"></div>
-        <div className="absolute bottom-4 left-4 right-4">
-          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border `}>
+        <div className="absolute bottom-4 left-4">
+          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${statusColors[blog.status]}`}>
             {blog.status === 'published' ? <CheckCircle className="w-3 h-3 mr-1" /> : <AlertCircle className="w-3 h-3 mr-1" />}
             {blog.status}
           </span>
@@ -502,7 +585,7 @@ const BlogCard = ({ blog, onEdit, onDelete, onStatusChange }) => {
           <span className="text-yellow-600 font-semibold text-sm">{blog.category}</span>
           <div className="flex items-center space-x-1 text-gray-500 text-sm">
             <Clock className="w-3 h-3" />
-            <span>{blog.readTime}</span>
+            <span>{blog.readingTime} min read</span>
           </div>
         </div>
 
@@ -518,12 +601,12 @@ const BlogCard = ({ blog, onEdit, onDelete, onStatusChange }) => {
 
         {/* Tags */}
         <div className="flex flex-wrap gap-1 mb-4">
-          {blog.tags.slice(0, 3).map((tag, index) => (
+          {blog.tags?.slice(0, 3).map((tag, index) => (
             <span key={index} className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">
               #{tag}
             </span>
           ))}
-          {blog.tags.length > 3 && (
+          {blog.tags?.length > 3 && (
             <span className="bg-gray-100 text-gray-500 px-2 py-1 rounded text-xs">
               +{blog.tags.length - 3}
             </span>
@@ -535,15 +618,15 @@ const BlogCard = ({ blog, onEdit, onDelete, onStatusChange }) => {
           <div className="flex items-center space-x-4 text-sm text-gray-500">
             <div className="flex items-center space-x-1">
               <Eye className="w-4 h-4" />
-              <span>{blog.views}</span>
+              <span>{blog.views || 0}</span>
             </div>
             <div className="flex items-center space-x-1">
               <MessageCircle className="w-4 h-4" />
-              <span>{blog.comments}</span>
+              <span>{blog.comments || 0}</span>
             </div>
             <div className="flex items-center space-x-1">
               <Calendar className="w-4 h-4" />
-              <span>{blog.date}</span>
+              <span>{new Date(blog.publishedAt).toLocaleDateString()}</span>
             </div>
           </div>
 
@@ -566,19 +649,31 @@ const BlogCard = ({ blog, onEdit, onDelete, onStatusChange }) => {
                   <span>Edit Post</span>
                 </button>
                 <button
-                  onClick={() => { onStatusChange(blog.id, blog.status === 'published' ? 'draft' : 'published'); setShowMenu(false); }}
+                  onClick={() => { onStatusChange(blog._id, blog.status === 'published' ? 'draft' : 'published'); setShowMenu(false); }}
                   className="w-full flex items-center space-x-3 px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors duration-200"
                 >
                   <Globe className="w-4 h-4" />
                   <span>{blog.status === 'published' ? 'Unpublish' : 'Publish'}</span>
                 </button>
-                <button className="w-full flex items-center space-x-3 px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors duration-200">
+                <button
+                  onClick={() => { onFeaturedToggle(blog._id, blog.featured); setShowMenu(false); }}
+                  className="w-full flex items-center space-x-3 px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors duration-200"
+                >
+                  <Star className="w-4 h-4" />
+                  <span>{blog.featured ? 'Remove Featured' : 'Mark Featured'}</span>
+                </button>
+                <a
+                  href={`/blog/${blog.slug}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full flex items-center space-x-3 px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors duration-200"
+                >
                   <ExternalLink className="w-4 h-4" />
                   <span>View Live</span>
-                </button>
+                </a>
                 <div className="border-t border-gray-200 my-1"></div>
                 <button
-                  onClick={() => { onDelete(blog.id); setShowMenu(false); }}
+                  onClick={() => { onDelete(blog._id); setShowMenu(false); }}
                   className="w-full flex items-center space-x-3 px-4 py-2 text-red-600 hover:bg-red-50 transition-colors duration-200"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -601,21 +696,66 @@ const BlogCard = ({ blog, onEdit, onDelete, onStatusChange }) => {
   );
 };
 
-// Blog Table Row Component for List View
-const BlogTableRow = ({ blog, onEdit, onDelete, onStatusChange }) => {
+// Blog Table View Component
+const BlogTableView = ({ blogs, onEdit, onDelete, onStatusChange, onFeaturedToggle }) => {
+  return (
+    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Post</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Category</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Status</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Metrics</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Date</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {blogs.map((blog) => (
+              <BlogTableRow 
+                key={blog._id} 
+                blog={blog} 
+                onEdit={onEdit}
+                onDelete={onDelete}
+                onStatusChange={onStatusChange}
+                onFeaturedToggle={onFeaturedToggle}
+              />
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+// Blog Table Row Component
+const BlogTableRow = ({ blog, onEdit, onDelete, onStatusChange, onFeaturedToggle }) => {
+  const statusColors = {
+    published: 'bg-green-100 text-green-800',
+    draft: 'bg-yellow-100 text-yellow-800',
+    archived: 'bg-gray-100 text-gray-800'
+  };
+
   return (
     <tr className="hover:bg-gray-50 transition-colors duration-200">
       <td className="px-6 py-4">
         <div className="flex items-start space-x-4">
           <div className="w-16 h-12 bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg flex-shrink-0"></div>
           <div className="min-w-0 flex-1">
-            <h3 className="font-semibold text-gray-900 text-sm line-clamp-2 mb-1">
-              {blog.title}
-            </h3>
+            <div className="flex items-center space-x-2 mb-1">
+              <h3 className="font-semibold text-gray-900 text-sm line-clamp-1">
+                {blog.title}
+              </h3>
+              {blog.featured && (
+                <Star className="w-4 h-4 text-yellow-500 fill-current" />
+              )}
+            </div>
             <p className="text-gray-600 text-xs line-clamp-1">{blog.excerpt}</p>
             <div className="flex items-center space-x-2 mt-2">
               <User className="w-3 h-3 text-gray-400" />
-              <span className="text-xs text-gray-500">{blog.author}</span>
+              <span className="text-xs text-gray-500">{blog.author?.name}</span>
             </div>
           </div>
         </div>
@@ -626,7 +766,7 @@ const BlogTableRow = ({ blog, onEdit, onDelete, onStatusChange }) => {
         </span>
       </td>
       <td className="px-6 py-4">
-        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border `}>
+        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${statusColors[blog.status]}`}>
           {blog.status}
         </span>
       </td>
@@ -634,18 +774,18 @@ const BlogTableRow = ({ blog, onEdit, onDelete, onStatusChange }) => {
         <div className="flex items-center space-x-4 text-xs text-gray-600">
           <div className="flex items-center space-x-1">
             <Eye className="w-3 h-3" />
-            <span>{blog.views}</span>
+            <span>{blog.views || 0}</span>
           </div>
           <div className="flex items-center space-x-1">
             <MessageCircle className="w-3 h-3" />
-            <span>{blog.comments}</span>
+            <span>{blog.comments || 0}</span>
           </div>
         </div>
       </td>
       <td className="px-6 py-4 text-sm text-gray-500">
         <div className="flex items-center space-x-1">
           <Calendar className="w-4 h-4" />
-          <span>{blog.date}</span>
+          <span>{new Date(blog.publishedAt).toLocaleDateString()}</span>
         </div>
       </td>
       <td className="px-6 py-4">
@@ -662,7 +802,20 @@ const BlogTableRow = ({ blog, onEdit, onDelete, onStatusChange }) => {
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
-            onClick={() => onDelete(blog.id)}
+            onClick={() => onFeaturedToggle(blog._id, blog.featured)}
+            className={`p-2 rounded-lg transition-colors duration-200 ${
+              blog.featured 
+                ? 'text-yellow-600 hover:bg-yellow-50' 
+                : 'text-gray-400 hover:bg-gray-50'
+            }`}
+            title={blog.featured ? 'Remove Featured' : 'Mark Featured'}
+          >
+            <Star className={`w-4 h-4 ${blog.featured ? 'fill-current' : ''}`} />
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => onDelete(blog._id)}
             className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
             title="Delete"
           >
@@ -674,11 +827,374 @@ const BlogTableRow = ({ blog, onEdit, onDelete, onStatusChange }) => {
   );
 };
 
-// Star icon component
-const Star = ({ className }) => (
-  <svg className={className} fill="currentColor" viewBox="0 0 20 20">
-    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-  </svg>
+// Empty State Component
+const EmptyState = ({ onCreateNew }) => (
+  <div className="text-center py-12 bg-white rounded-2xl shadow-lg border border-gray-100">
+    <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+    <h3 className="text-lg font-semibold text-gray-900 mb-2">No blog posts found</h3>
+    <p className="text-gray-600 mb-6">Try adjusting your search or filters</p>
+    <button
+      onClick={onCreateNew}
+      className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold px-6 py-3 rounded-xl transition-all duration-300 inline-flex items-center space-x-2"
+    >
+      <Plus className="w-5 h-5" />
+      <span>Create Your First Post</span>
+    </button>
+  </div>
 );
+
+// Blog Editor Component
+const BlogEditor = ({ blogData, editingBlog, saving, onInputChange, onSave, onClose, categories, generateSlug }) => {
+  const [activeTab, setActiveTab] = useState('content');
+
+  const handleTitleChange = (e) => {
+    onInputChange(e);
+    // Auto-generate slug if empty
+    if (!blogData.slug) {
+      onInputChange({
+        target: {
+          name: 'slug',
+          value: generateSlug(e.target.value)
+        }
+      });
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center p-4 z-50"
+    >
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.9, opacity: 0 }}
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              {editingBlog ? 'Edit Blog Post' : 'Create New Blog Post'}
+            </h2>
+            <p className="text-gray-600 mt-1">
+              {editingBlog ? 'Update your blog content' : 'Write and publish a new blog post'}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+
+        {/* Tabs */}
+        <div className="border-b border-gray-200">
+          <div className="flex space-x-1 px-6">
+            {['content', 'seo', 'settings'].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-4 py-3 text-sm font-medium capitalize transition-colors duration-200 ${
+                  activeTab === tab
+                    ? 'text-yellow-600 border-b-2 border-yellow-500'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6">
+          {activeTab === 'content' && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Main Content */}
+              <div className="lg:col-span-2 space-y-6">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Title *
+                  </label>
+                  <input
+                    type="text"
+                    name="title"
+                    value={blogData.title}
+                    onChange={handleTitleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-300"
+                    placeholder="Enter blog title"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Slug *
+                  </label>
+                  <input
+                    type="text"
+                    name="slug"
+                    value={blogData.slug}
+                    onChange={onInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-300"
+                    placeholder="blog-post-url-slug"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Excerpt *
+                  </label>
+                  <textarea
+                    name="excerpt"
+                    value={blogData.excerpt}
+                    onChange={onInputChange}
+                    rows="3"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-300 resize-none"
+                    placeholder="Brief description of your blog post"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Content *
+                  </label>
+                  <textarea
+                    name="content"
+                    value={blogData.content}
+                    onChange={onInputChange}
+                    rows="12"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-300 resize-none font-mono text-sm"
+                    placeholder="Write your blog content here... (HTML supported)"
+                  />
+                  <p className="text-xs text-gray-500 mt-2">
+                    You can use HTML tags for formatting your content
+                  </p>
+                </div>
+              </div>
+
+              {/* Sidebar */}
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Category *
+                  </label>
+                  <select
+                    name="category"
+                    value={blogData.category}
+                    onChange={onInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-300"
+                  >
+                    <option value="">Select Category</option>
+                    {categories.map(category => (
+                      <option key={category} value={category}>{category}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Tags
+                  </label>
+                  <input
+                    type="text"
+                    name="tags"
+                    value={blogData.tags}
+                    onChange={onInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-300"
+                    placeholder="tag1, tag2, tag3"
+                  />
+                  <p className="text-xs text-gray-500 mt-2">
+                    Separate tags with commas
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Reading Time (minutes)
+                  </label>
+                  <input
+                    type="number"
+                    name="readingTime"
+                    value={blogData.readingTime}
+                    onChange={onInputChange}
+                    min="1"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-300"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'seo' && (
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Meta Title
+                </label>
+                <input
+                  type="text"
+                  name="seo.metaTitle"
+                  value={blogData.seo.metaTitle}
+                  onChange={onInputChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-300"
+                  placeholder="SEO meta title"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Meta Description
+                </label>
+                <textarea
+                  name="seo.metaDescription"
+                  value={blogData.seo.metaDescription}
+                  onChange={onInputChange}
+                  rows="3"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-300 resize-none"
+                  placeholder="SEO meta description"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Keywords
+                </label>
+                <input
+                  type="text"
+                  name="seo.keywords"
+                  value={blogData.seo.keywords}
+                  onChange={onInputChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-300"
+                  placeholder="keyword1, keyword2, keyword3"
+                />
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'settings' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Status
+                  </label>
+                  <select
+                    name="status"
+                    value={blogData.status}
+                    onChange={onInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-300"
+                  >
+                    <option value="draft">Draft</option>
+                    <option value="published">Published</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    name="featured"
+                    checked={blogData.featured}
+                    onChange={onInputChange}
+                    className="w-4 h-4 text-yellow-500 focus:ring-yellow-500 border-gray-300 rounded"
+                  />
+                  <label className="text-sm font-medium text-gray-700">
+                    Featured Post
+                  </label>
+                </div>
+
+                <div className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    name="allowComments"
+                    checked={blogData.allowComments}
+                    onChange={onInputChange}
+                    className="w-4 h-4 text-yellow-500 focus:ring-yellow-500 border-gray-300 rounded"
+                  />
+                  <label className="text-sm font-medium text-gray-700">
+                    Allow Comments
+                  </label>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Author Name
+                  </label>
+                  <input
+                    type="text"
+                    name="author.name"
+                    value={blogData.author.name}
+                    onChange={onInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-300"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Author Email
+                  </label>
+                  <input
+                    type="email"
+                    name="author.email"
+                    value={blogData.author.email}
+                    onChange={onInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-300"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Author Bio
+                  </label>
+                  <textarea
+                    name="author.bio"
+                    value={blogData.author.bio}
+                    onChange={onInputChange}
+                    rows="3"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-300 resize-none"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50">
+          <div className="text-sm text-gray-500">
+            {editingBlog ? 'Editing existing post' : 'Creating new post'}
+          </div>
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={onClose}
+              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-300 font-medium"
+            >
+              Cancel
+            </button>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={onSave}
+              disabled={saving || !blogData.title || !blogData.excerpt || !blogData.content || !blogData.category}
+              className="bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-400 text-gray-900 font-bold px-6 py-3 rounded-xl transition-all duration-300 flex items-center space-x-2 disabled:cursor-not-allowed"
+            >
+              {saving ? (
+                <RefreshCw className="w-5 h-5 animate-spin" />
+              ) : (
+                <Save className="w-5 h-5" />
+              )}
+              <span>{saving ? 'Saving...' : (editingBlog ? 'Update Post' : 'Publish Post')}</span>
+            </motion.button>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
 
 export default BlogManage;

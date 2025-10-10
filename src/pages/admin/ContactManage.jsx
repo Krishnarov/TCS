@@ -1,77 +1,48 @@
-import React, { useState, useEffect } from 'react';
-
+import React, { useState, useEffect } from "react";
+import axiosInstance from "../../../axiosInstance.jsx";
 function ContactManage() {
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedContact, setSelectedContact] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   // Mock data - in real app, this would come from your API
+  const fetchcontectdata = async () => {
+    try {
+      const res = await axiosInstance.get(`/contact`);
+      console.log(res);
+      if (res.data.success) {
+        setContacts(res.data.data.contacts);
+      }
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     // Simulate API call
-    setTimeout(() => {
-      const mockContacts = [
-        {
-          id: 1,
-          name: "John Doe",
-          email: "john@example.com",
-          phone: "+1234567890",
-          subject: "Website Feedback",
-          message: "I really like your website design and functionality. The user interface is intuitive and easy to navigate. Looking forward to seeing more features in the future.",
-          date: "2024-01-15T10:30:00Z",
-          status: "new"
-        },
-        {
-          id: 2,
-          name: "Jane Smith",
-          email: "jane@example.com",
-          phone: "+0987654321",
-          subject: "Partnership Inquiry",
-          message: "I'm interested in partnering with your company for our upcoming project. We believe there's great synergy between our organizations.",
-          date: "2024-01-14T14:45:00Z",
-          status: "read"
-        },
-        {
-          id: 3,
-          name: "Mike Johnson",
-          email: "mike@example.com",
-          phone: "+1122334455",
-          subject: "Technical Support",
-          message: "I'm having issues with the login functionality on your platform. When I try to log in, it shows an error message.",
-          date: "2024-01-13T09:15:00Z",
-          status: "new"
-        },
-        {
-          id: 4,
-          name: "Sarah Wilson",
-          email: "sarah@example.com",
-          phone: "+5566778899",
-          subject: "Product Inquiry",
-          message: "I would like to know more about your premium features and pricing plans for enterprise customers.",
-          date: "2024-01-12T16:20:00Z",
-          status: "read"
-        }
-      ];
-      setContacts(mockContacts);
-      setLoading(false);
-    }, 1000);
+    fetchcontectdata();
   }, []);
 
   // Filter contacts based on search and status
-  const filteredContacts = contacts.filter(contact => {
-    const matchesSearch = contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         contact.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         contact.subject.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'all' || contact.status === statusFilter;
-    
+  const filteredContacts = contacts.filter((contact) => {
+    const matchesSearch =
+      contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      contact.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      contact.subject.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesStatus =
+      statusFilter === "all" || contact.status === statusFilter;
+
     return matchesSearch && matchesStatus;
   });
 
   const deleteContact = (id) => {
-    if (window.confirm('Are you sure you want to delete this contact?')) {
-      setContacts(contacts.filter(contact => contact.id !== id));
+    if (window.confirm("Are you sure you want to delete this contact?")) {
+      setContacts(contacts.filter((contact) => contact.id !== id));
       if (selectedContact && selectedContact.id === id) {
         setSelectedContact(null);
       }
@@ -79,33 +50,39 @@ function ContactManage() {
   };
 
   const markAsRead = (id) => {
-    setContacts(contacts.map(contact => 
-      contact.id === id ? { ...contact, status: 'read' } : contact
-    ));
+    setContacts(
+      contacts.map((contact) =>
+        contact.id === id ? { ...contact, status: "read" } : contact
+      )
+    );
     if (selectedContact && selectedContact.id === id) {
-      setSelectedContact({ ...selectedContact, status: 'read' });
+      setSelectedContact({ ...selectedContact, status: "read" });
     }
   };
 
   const markAllAsRead = () => {
-    setContacts(contacts.map(contact => ({ ...contact, status: 'read' })));
+    setContacts(contacts.map((contact) => ({ ...contact, status: "read" })));
     if (selectedContact) {
-      setSelectedContact({ ...selectedContact, status: 'read' });
+      setSelectedContact({ ...selectedContact, status: "read" });
     }
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   const getInitials = (name) => {
-    return name.split(' ').map(word => word[0]).join('').toUpperCase();
+    return name
+      .split(" ")
+      .map((word) => word[0])
+      .join("")
+      .toUpperCase();
   };
 
   if (loading) {
@@ -124,21 +101,25 @@ function ContactManage() {
       <div className="mb-6 md:mb-8">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Contact Submissions</h1>
-            <p className="text-gray-600 mt-1">Manage all contact form submissions from your website</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+              Contact Submissions
+            </h1>
+            <p className="text-gray-600 mt-1">
+              Manage all contact form submissions from your website
+            </p>
           </div>
-          
+
           <div className="flex items-center space-x-4 mt-4 md:mt-0">
             <div className="flex items-center space-x-2">
               <span className="bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full">
                 Total: {contacts.length}
               </span>
               <span className="bg-red-100 text-red-800 text-sm px-3 py-1 rounded-full">
-                New: {contacts.filter(c => c.status === 'new').length}
+                New: {contacts.filter((c) => c.status === "new").length}
               </span>
             </div>
-            
-            {contacts.some(c => c.status === 'new') && (
+
+            {contacts.some((c) => c.status === "new") && (
               <button
                 onClick={markAllAsRead}
                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
@@ -177,26 +158,31 @@ function ContactManage() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="p-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">
-              Contact List {filteredContacts.length > 0 && `(${filteredContacts.length})`}
+              Contact List{" "}
+              {filteredContacts.length > 0 && `(${filteredContacts.length})`}
             </h2>
           </div>
-          
+
           <div className="overflow-y-auto max-h-[600px]">
             {filteredContacts.length === 0 ? (
               <div className="text-center py-12">
                 <div className="text-gray-400 text-6xl mb-4">📭</div>
                 <p className="text-gray-500 text-lg">No contacts found</p>
                 <p className="text-gray-400 text-sm mt-1">
-                  {searchTerm || statusFilter !== 'all' ? 'Try adjusting your filters' : 'No contact submissions yet'}
+                  {searchTerm || statusFilter !== "all"
+                    ? "Try adjusting your filters"
+                    : "No contact submissions yet"}
                 </p>
               </div>
             ) : (
-              filteredContacts.map(contact => (
+              filteredContacts.map((contact) => (
                 <div
-                  key={contact.id}
+                  key={contact._id}
                   className={`border-b border-gray-100 p-4 cursor-pointer transition-colors hover:bg-gray-50 ${
-                    selectedContact?.id === contact.id ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
-                  } ${contact.status === 'new' ? 'bg-orange-50' : ''}`}
+                    selectedContact?._id === contact._id
+                      ? "bg-blue-50 border-l-4 border-l-blue-500"
+                      : ""
+                  } ${contact.status === "new" ? "bg-orange-50" : ""}`}
                   onClick={() => setSelectedContact(contact)}
                 >
                   <div className="flex items-start space-x-3">
@@ -205,14 +191,14 @@ function ContactManage() {
                         {getInitials(contact.name)}
                       </div>
                     </div>
-                    
+
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
                         <h3 className="font-semibold text-gray-900 truncate">
                           {contact.name}
                         </h3>
                         <div className="flex items-center space-x-2">
-                          {contact.status === 'new' && (
+                          {contact.status === "new" && (
                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
                               New
                             </span>
@@ -222,22 +208,22 @@ function ContactManage() {
                           </span>
                         </div>
                       </div>
-                      
+
                       <p className="text-sm font-medium text-gray-900 mb-1 truncate">
                         {contact.subject}
                       </p>
-                      
+
                       <p className="text-sm text-gray-600 mb-2 line-clamp-2">
                         {contact.message}
                       </p>
-                      
+
                       <div className="flex items-center justify-between">
                         <p className="text-sm text-blue-600 truncate">
                           {contact.email}
                         </p>
-                        
+
                         <div className="flex space-x-2">
-                          {contact.status === 'new' && (
+                          {contact.status === "new" && (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -273,13 +259,25 @@ function ContactManage() {
             <>
               <div className="p-6 border-b border-gray-200">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-bold text-gray-900">Contact Details</h2>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Contact Details
+                  </h2>
                   <button
                     onClick={() => setSelectedContact(null)}
                     className="text-gray-400 hover:text-gray-600 transition-colors"
                   >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    <svg
+                      className="w-6 h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
                     </svg>
                   </button>
                 </div>
@@ -292,14 +290,20 @@ function ContactManage() {
                     {getInitials(selectedContact.name)}
                   </div>
                   <div>
-                    <h3 className="text-2xl font-bold text-gray-900">{selectedContact.name}</h3>
+                    <h3 className="text-2xl font-bold text-gray-900">
+                      {selectedContact.name}
+                    </h3>
                     <div className="flex items-center space-x-2 mt-1">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                        selectedContact.status === 'new' 
-                          ? 'bg-red-100 text-red-800' 
-                          : 'bg-green-100 text-green-800'
-                      }`}>
-                        {selectedContact.status === 'new' ? 'New Message' : 'Read'}
+                      <span
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                          selectedContact.status === "new"
+                            ? "bg-red-100 text-red-800"
+                            : "bg-green-100 text-green-800"
+                        }`}
+                      >
+                        {selectedContact.status === "new"
+                          ? "New Message"
+                          : "Read"}
                       </span>
                       <span className="text-sm text-gray-500">
                         {formatDate(selectedContact.date)}
@@ -311,18 +315,28 @@ function ContactManage() {
                 {/* Contact Information */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-sm font-medium text-gray-500">Email</label>
+                    <label className="text-sm font-medium text-gray-500">
+                      Email
+                    </label>
                     <p className="text-gray-900">
-                      <a href={`mailto:${selectedContact.email}`} className="text-blue-600 hover:text-blue-800">
+                      <a
+                        href={`mailto:${selectedContact.email}`}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
                         {selectedContact.email}
                       </a>
                     </p>
                   </div>
-                  
+
                   <div className="space-y-1">
-                    <label className="text-sm font-medium text-gray-500">Phone</label>
+                    <label className="text-sm font-medium text-gray-500">
+                      Phone
+                    </label>
                     <p className="text-gray-900">
-                      <a href={`tel:${selectedContact.phone}`} className="text-blue-600 hover:text-blue-800">
+                      <a
+                        href={`tel:${selectedContact.phone}`}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
                         {selectedContact.phone}
                       </a>
                     </p>
@@ -331,13 +345,19 @@ function ContactManage() {
 
                 {/* Subject */}
                 <div className="space-y-1">
-                  <label className="text-sm font-medium text-gray-500">Subject</label>
-                  <p className="text-lg font-semibold text-gray-900">{selectedContact.subject}</p>
+                  <label className="text-sm font-medium text-gray-500">
+                    Subject
+                  </label>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {selectedContact.subject}
+                  </p>
                 </div>
 
                 {/* Message */}
                 <div className="space-y-1">
-                  <label className="text-sm font-medium text-gray-500">Message</label>
+                  <label className="text-sm font-medium text-gray-500">
+                    Message
+                  </label>
                   <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                     <p className="text-gray-900 whitespace-pre-wrap leading-relaxed">
                       {selectedContact.message}
@@ -351,19 +371,39 @@ function ContactManage() {
                     onClick={() => deleteContact(selectedContact.id)}
                     className="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      />
                     </svg>
                     <span>Delete Contact</span>
                   </button>
-                  
-                  {selectedContact.status === 'new' && (
+
+                  {selectedContact.status === "new" && (
                     <button
                       onClick={() => markAsRead(selectedContact.id)}
                       className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 13l4 4L19 7"
+                        />
                       </svg>
                       <span>Mark as Read</span>
                     </button>
@@ -374,9 +414,12 @@ function ContactManage() {
           ) : (
             <div className="text-center py-16">
               <div className="text-gray-300 text-8xl mb-4">👆</div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Select a Contact</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Select a Contact
+              </h3>
               <p className="text-gray-500 max-w-sm mx-auto">
-                Choose a contact from the list to view detailed information and manage the submission.
+                Choose a contact from the list to view detailed information and
+                manage the submission.
               </p>
             </div>
           )}

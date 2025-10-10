@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { 
@@ -9,18 +9,24 @@ import {
   Tag,
   Eye,
   MessageCircle,
-  Share2,
   BookOpen,
   TrendingUp,
-  Shield,
-  Zap,
-  Building2,
-  Wrench,
-  Phone,
-  Mail
+  Search,
+  Filter,
+  ChevronDown,
+  ThumbsUp
 } from 'lucide-react';
+import axios from '../../../axiosInstance';
 
 const Blog = () => {
+  const [blogs, setBlogs] = useState([]);
+  const [filteredBlogs, setFilteredBlogs] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [visibleBlogs, setVisibleBlogs] = useState(6);
+
   // Animation variants
   const fadeInUp = {
     initial: { opacity: 0, y: 60 },
@@ -36,145 +42,93 @@ const Blog = () => {
     }
   };
 
-  // Blog categories based on PDF services
-  const categories = [
-    { name: 'Structural Engineering', count: 8, color: 'from-blue-500 to-blue-600' },
-    { name: 'Piping Systems', count: 6, color: 'from-green-500 to-green-600' },
-    { name: 'Mechanical Works', count: 5, color: 'from-orange-500 to-orange-600' },
-    { name: 'Electrical Systems', count: 7, color: 'from-purple-500 to-purple-600' },
-    { name: 'Safety Standards', count: 4, color: 'from-red-500 to-red-600' },
-    { name: 'Industry Insights', count: 9, color: 'from-yellow-500 to-yellow-600' }
-  ];
-
-  // Blog posts based on PDF content and services
-  const blogPosts = [
-    {
-      id: 1,
-      title: 'Advancements in Structural Fabrication for Heavy Industries',
-      excerpt: 'Exploring the latest techniques in structural fabrication and erection for heavy industrial applications with precision engineering.',
-      content: 'Structural fabrication has evolved significantly with modern techniques ensuring precision and durability in heavy industrial applications...',
-      author: 'Jitendra Yadav',
-      date: 'Dec 15, 2023',
-      readTime: '6 min read',
-      category: 'Structural Engineering',
-      tags: ['Fabrication', 'Heavy Structures', 'Industrial'],
-      image: 'structural-blog',
-      views: 1247,
-      comments: 23,
-      featured: true,
-      color: 'from-blue-500 to-blue-600'
-    },
-    {
-      id: 2,
-      title: 'Best Practices in Piping System Installation and Maintenance',
-      excerpt: 'Comprehensive guide to piping fabrication, installation, and maintenance for industrial applications with quality assurance.',
-      content: 'Proper piping system installation is crucial for industrial operations. Learn about best practices in fabrication and maintenance...',
-      author: 'TCS Engineering Team',
-      date: 'Dec 10, 2023',
-      readTime: '8 min read',
-      category: 'Piping Systems',
-      tags: ['Piping', 'Installation', 'Maintenance'],
-      image: 'piping-blog',
-      views: 892,
-      comments: 15,
-      featured: true,
-      color: 'from-green-500 to-green-600'
-    },
-    {
-      id: 3,
-      title: 'Electrical Works Safety Protocols in Industrial Construction',
-      excerpt: 'Essential safety measures and protocols for electrical works in industrial construction projects ensuring zero incidents.',
-      content: 'Electrical safety is paramount in industrial construction. Discover the protocols that ensure safe and efficient electrical installations...',
-      author: 'Safety Department',
-      date: 'Dec 5, 2023',
-      readTime: '5 min read',
-      category: 'Electrical Systems',
-      tags: ['Electrical', 'Safety', 'Protocols'],
-      image: 'electrical-blog',
-      views: 756,
-      comments: 18,
-      featured: false,
-      color: 'from-purple-500 to-purple-600'
-    },
-    {
-      id: 4,
-      title: 'Mechanical Equipment Erection: Precision and Quality Standards',
-      excerpt: 'Understanding the precision requirements and quality standards in mechanical equipment erection for industrial facilities.',
-      content: 'Mechanical equipment erection demands precision and adherence to quality standards. Learn about the processes that ensure optimal performance...',
-      author: 'Technical Team',
-      date: 'Nov 28, 2023',
-      readTime: '7 min read',
-      category: 'Mechanical Works',
-      tags: ['Mechanical', 'Equipment', 'Quality'],
-      image: 'mechanical-blog',
-      views: 634,
-      comments: 12,
-      featured: false,
-      color: 'from-orange-500 to-orange-600'
-    },
-    {
-      id: 5,
-      title: 'HDPE Fabrication: Custom Solutions for Industrial Needs',
-      excerpt: 'Exploring High-Density Polyethylene fabrication techniques and custom solutions for various industrial applications.',
-      content: 'HDPE fabrication offers versatile solutions for industrial needs. Discover how custom fabrication meets specific project requirements...',
-      author: 'Fabrication Team',
-      date: 'Nov 20, 2023',
-      readTime: '4 min read',
-      category: 'Piping Systems',
-      tags: ['HDPE', 'Fabrication', 'Custom'],
-      image: 'hdpe-blog',
-      views: 523,
-      comments: 8,
-      featured: false,
-      color: 'from-teal-500 to-teal-600'
-    },
-    {
-      id: 6,
-      title: 'ESP Commissioning: Ensuring Optimal Performance in Industries',
-      excerpt: 'Complete guide to Electrostatic Precipitator commissioning, troubleshooting, and maintenance for industrial applications.',
-      content: 'ESP commissioning requires technical expertise and systematic approach. Learn about the processes that ensure optimal performance...',
-      author: 'Technical Services',
-      date: 'Nov 15, 2023',
-      readTime: '9 min read',
-      category: 'Industry Insights',
-      tags: ['ESP', 'Commissioning', 'Maintenance'],
-      image: 'esp-blog',
-      views: 687,
-      comments: 14,
-      featured: false,
-      color: 'from-red-500 to-red-600'
+  // Fetch blogs from API
+  const fetchBlogs = async () => {
+    try {
+      const res = await axios.get('/blogs');
+      if (res.data.success) {
+        setBlogs(res.data.data);
+        setFilteredBlogs(res.data.data);
+        
+        // Extract unique categories
+        const uniqueCategories = ['all', ...new Set(res.data.data.map(blog => blog.category))];
+        setCategories(uniqueCategories);
+      }
+    } catch (error) {
+      console.log('Error fetching blogs:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  // Popular posts
-  const popularPosts = blogPosts.slice(0, 3);
+  useEffect(() => {
+    fetchBlogs();
+  }, []);
 
-  // Blog statistics
-  const blogStats = [
-    {
-      number: '50+',
-      title: 'Articles Published',
-      description: 'Expert insights and industry knowledge'
-    },
-    {
-      number: '10K+',
-      title: 'Monthly Readers',
-      description: 'Growing community of professionals'
-    },
-    {
-      number: '100+',
-      title: 'Industry Topics',
-      description: 'Comprehensive coverage of construction'
-    },
-    {
-      number: '24/7',
-      title: 'Updated Content',
-      description: 'Fresh insights and latest trends'
+  // Filter blogs based on category and search term
+  useEffect(() => {
+    let filtered = blogs;
+
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(blog => blog.category === selectedCategory);
     }
-  ];
+
+    if (searchTerm) {
+      filtered = filtered.filter(blog => 
+        blog.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        blog.excerpt.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        blog.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+    }
+
+    setFilteredBlogs(filtered);
+    setVisibleBlogs(6);
+  }, [selectedCategory, searchTerm, blogs]);
+
+  const loadMoreBlogs = () => {
+    setVisibleBlogs(prev => prev + 6);
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-IN', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const getCategoryColor = (category) => {
+    const colors = {
+      'Structural Engineering': 'from-blue-500 to-blue-600',
+      'Piping Systems': 'from-green-500 to-green-600',
+      'Mechanical Works': 'from-orange-500 to-orange-600',
+      'Electrical Systems': 'from-purple-500 to-purple-600',
+      'Safety Standards': 'from-red-500 to-red-600',
+      'Industry Insights': 'from-yellow-500 to-yellow-600',
+      'Construction': 'from-indigo-500 to-indigo-600',
+      'Technology': 'from-teal-500 to-teal-600',
+      'Sustainability': 'from-emerald-500 to-emerald-600'
+    };
+    return colors[category] || 'from-gray-500 to-gray-600';
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-center"
+        >
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-yellow-500 mx-auto mb-4"></div>
+          <p className="text-gray-600 text-lg">Loading blogs...</p>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
-    <div className="overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Hero Banner */}
       <section className="relative py-20 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 overflow-hidden">
         <div className="absolute inset-0 opacity-10">
@@ -188,381 +142,413 @@ const Blog = () => {
             initial="initial"
             animate="animate"
             variants={staggerContainer}
-            className="text-center text-white"
+            className="text-center text-white max-w-4xl mx-auto"
           >
             <motion.div
               variants={fadeInUp}
               className="inline-flex items-center space-x-2 bg-yellow-500/20 border border-yellow-500/30 rounded-full px-4 py-2 mb-6"
             >
               <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
-              <span className="text-yellow-500 text-sm font-semibold">Our Blog</span>
+              <span className="text-yellow-500 text-sm font-semibold">TCS Insights</span>
             </motion.div>
 
             <motion.h1
               variants={fadeInUp}
-              className="text-5xl lg:text-6xl font-bold mb-6"
+              className="text-5xl lg:text-6xl font-bold mb-6 leading-tight"
             >
-              Construction <span className="text-yellow-500">Insights</span>
+              Construction <span className="text-yellow-500">Knowledge Hub</span>
             </motion.h1>
 
             <motion.p
               variants={fadeInUp}
-              className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed"
+              className="text-xl text-gray-300 leading-relaxed mb-8"
             >
-              Expert knowledge, industry trends, and technical insights from Triveni Construction Solution - 
-              Your trusted partner in industrial construction.
+              Expert insights, industry trends, and technical knowledge from Triveni Construction Solution - 
+              Your trusted partner in industrial construction and engineering excellence.
             </motion.p>
+
+            {/* Search Bar */}
+            <motion.div
+              variants={fadeInUp}
+              className="max-w-2xl mx-auto"
+            >
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type="text"
+                  placeholder="Search articles, topics, or keywords..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-12 pr-4 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                />
+              </div>
+            </motion.div>
           </motion.div>
         </div>
       </section>
 
-      {/* Blog Statistics */}
-      <section className="py-20 bg-white">
+      {/* Blog Content */}
+      <section className="py-16">
         <div className="container mx-auto px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-            className="text-center mb-16"
-          >
-            <div className="inline-flex items-center space-x-2 bg-yellow-500/20 border border-yellow-500/30 rounded-full px-4 py-2 mb-4">
-              <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
-              <span className="text-yellow-500 text-sm font-semibold">Blog Community</span>
-            </div>
-            <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
-              Sharing <span className="text-yellow-500">Knowledge</span>
-            </h2>
-          </motion.div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {blogStats.map((stat, index) => (
+          <div className="flex flex-col lg:flex-row gap-8">
+            {/* Main Content */}
+            <div className="lg:w-3/4">
+              {/* Filters and Results Info */}
               <motion.div
-                key={index}
                 initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                viewport={{ once: true }}
-                className="text-center"
+                animate={{ opacity: 1, y: 0 }}
+                className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-8"
               >
-                <div className="w-20 h-20 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-6 text-white text-2xl font-bold">
-                  {stat.number}
+                <div className="flex items-center space-x-4">
+                  <Filter className="w-5 h-5 text-gray-600" />
+                  <span className="text-gray-700 font-medium">
+                    Showing {Math.min(visibleBlogs, filteredBlogs.length)} of {filteredBlogs.length} articles
+                  </span>
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">{stat.title}</h3>
-                <p className="text-gray-600 leading-relaxed">{stat.description}</p>
+                
+                {/* Category Filter */}
+                <div className="flex flex-wrap gap-2">
+                  {categories.map((category) => (
+                    <button
+                      key={category}
+                      onClick={() => setSelectedCategory(category)}
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                        selectedCategory === category
+                          ? 'bg-yellow-500 text-gray-900 shadow-lg'
+                          : 'bg-white text-gray-700 hover:bg-gray-100 shadow-sm'
+                      }`}
+                    >
+                      {category === 'all' ? 'All Categories' : category}
+                    </button>
+                  ))}
+                </div>
               </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      {/* Featured Posts */}
-      <section className="py-20 bg-gray-50">
-        <div className="container mx-auto px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-            className="text-center mb-16"
-          >
-            <div className="inline-flex items-center space-x-2 bg-yellow-500/20 border border-yellow-500/30 rounded-full px-4 py-2 mb-4">
-              <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
-              <span className="text-yellow-500 text-sm font-semibold">Featured</span>
-            </div>
-            <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
-              Featured <span className="text-yellow-500">Articles</span>
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              In-depth technical articles and industry insights from our expert team
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
-            {blogPosts.filter(post => post.featured).map((post, index) => (
-              <motion.article
-                key={post.id}
-                initial={{ opacity: 0, y: 60 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.2 }}
-                viewport={{ once: true }}
-                whileHover={{ y: -10 }}
-                className="bg-white rounded-2xl shadow-xl hover:shadow-2xl overflow-hidden transition-all duration-300 group"
-              >
-                <div className="relative h-64 bg-gradient-to-br from-gray-800 to-gray-900 overflow-hidden">
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className={`w-20 h-20 bg-gradient-to-r ${post.color} rounded-2xl flex items-center justify-center text-white group-hover:scale-110 transition-transform duration-300`}>
-                      <BookOpen className="w-10 h-10" />
-                    </div>
-                  </div>
-                  <div className="absolute top-4 left-4">
-                    <span className="bg-yellow-500 text-gray-900 px-3 py-1 rounded-full text-sm font-semibold">
-                      Featured
-                    </span>
-                  </div>
-                </div>
-
-                <div className="p-8">
-                  <div className="flex items-center space-x-4 text-sm text-gray-500 mb-4">
-                    <div className="flex items-center space-x-1">
-                      <User className="w-4 h-4" />
-                      <span>{post.author}</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <Calendar className="w-4 h-4" />
-                      <span>{post.date}</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <Clock className="w-4 h-4" />
-                      <span>{post.readTime}</span>
-                    </div>
-                  </div>
-
-                  <h3 className="text-2xl font-bold text-gray-900 mb-4 group-hover:text-yellow-600 transition-colors">
-                    {post.title}
-                  </h3>
-
-                  <p className="text-gray-600 mb-6 leading-relaxed">
-                    {post.excerpt}
-                  </p>
-
-                  <div className="flex flex-wrap gap-2 mb-6">
-                    {post.tags.map((tag, tagIndex) => (
-                      <span
-                        key={tagIndex}
-                        className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-xs font-medium"
+              {/* Featured Blogs */}
+              {filteredBlogs?.filter(blog => blog.featured).length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 40 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mb-12"
+                >
+                  <h2 className="text-3xl font-bold text-gray-900 mb-8 flex items-center">
+                    <TrendingUp className="w-8 h-8 mr-3 text-yellow-500" />
+                    Featured Articles
+                  </h2>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {filteredBlogs
+                      .filter(blog => blog.featured)
+                      .slice(0, 2)
+                      .map((blog, index) => (
+                      <motion.article
+                        key={blog._id}
+                        initial={{ opacity: 0, y: 60 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: index * 0.2 }}
+                        whileHover={{ y: -8 }}
+                        className="bg-white rounded-2xl shadow-xl hover:shadow-2xl overflow-hidden transition-all duration-300 group cursor-pointer"
                       >
-                        #{tag}
-                      </span>
+                        <Link to={`/blog/${blog.slug}`}>
+                          <div className="relative h-64 bg-gradient-to-br from-gray-800 to-gray-900 overflow-hidden">
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className={`w-20 h-20 bg-gradient-to-r ${getCategoryColor(blog.category)} rounded-2xl flex items-center justify-center text-white group-hover:scale-110 transition-transform duration-300`}>
+                                <BookOpen className="w-10 h-10" />
+                              </div>
+                            </div>
+                            <div className="absolute top-4 left-4">
+                              <span className="bg-yellow-500 text-gray-900 px-3 py-1 rounded-full text-sm font-semibold">
+                                Featured
+                              </span>
+                            </div>
+                            <div className="absolute bottom-4 left-4">
+                              <span className="bg-black/50 text-white px-3 py-1 rounded-full text-sm font-medium backdrop-blur-sm">
+                                {blog.category}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="p-8">
+                            <div className="flex items-center space-x-4 text-sm text-gray-500 mb-4">
+                              <div className="flex items-center space-x-1">
+                                <User className="w-4 h-4" />
+                                <span>{blog.author?.name || 'TCS Team'}</span>
+                              </div>
+                              <div className="flex items-center space-x-1">
+                                <Calendar className="w-4 h-4" />
+                                <span>{formatDate(blog.publishedAt)}</span>
+                              </div>
+                              <div className="flex items-center space-x-1">
+                                <Clock className="w-4 h-4" />
+                                <span>{blog.readingTime} min read</span>
+                              </div>
+                            </div>
+
+                            <h3 className="text-2xl font-bold text-gray-900 mb-4 group-hover:text-yellow-600 transition-colors line-clamp-2">
+                              {blog.title}
+                            </h3>
+
+                            <p className="text-gray-600 mb-6 leading-relaxed line-clamp-3">
+                              {blog.excerpt}
+                            </p>
+
+                            <div className="flex flex-wrap gap-2 mb-6">
+                              {blog.tags.slice(0, 3).map((tag, tagIndex) => (
+                                <span
+                                  key={tagIndex}
+                                  className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-xs font-medium"
+                                >
+                                  #{tag}
+                                </span>
+                              ))}
+                            </div>
+
+                            <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                              <div className="flex items-center space-x-4 text-sm text-gray-500">
+                                <div className="flex items-center space-x-1">
+                                  <Eye className="w-4 h-4" />
+                                  <span>{blog.views} views</span>
+                                </div>
+                                <div className="flex items-center space-x-1">
+                                  <ThumbsUp className="w-4 h-4" />
+                                  <span>{blog.likes} likes</span>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center space-x-2 text-yellow-600 font-semibold group-hover:translate-x-1 transition-transform duration-200">
+                                <span>Read More</span>
+                                <ArrowRight className="w-4 h-4" />
+                              </div>
+                            </div>
+                          </div>
+                        </Link>
+                      </motion.article>
                     ))}
                   </div>
+                </motion.div>
+              )}
 
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                    <div className="flex items-center space-x-4 text-sm text-gray-500">
-                      <div className="flex items-center space-x-1">
-                        <Eye className="w-4 h-4" />
-                        <span>{post.views} views</span>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <MessageCircle className="w-4 h-4" />
-                        <span>{post.comments} comments</span>
-                      </div>
-                    </div>
-
-                    <motion.div
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      <Link
-                        to={`/blog/${post.id}`}
-                        className="inline-flex items-center space-x-2 text-yellow-600 hover:text-yellow-700 font-semibold transition-colors duration-200"
-                      >
-                        <span>Read More</span>
-                        <ArrowRight className="w-4 h-4" />
-                      </Link>
-                    </motion.div>
-                  </div>
-                </div>
-              </motion.article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* All Blog Posts */}
-      <section className="py-20 bg-white">
-        <div className="container mx-auto px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            {/* Main Content */}
-            <div className="lg:col-span-3">
+              {/* All Blogs */}
               <motion.div
                 initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-                viewport={{ once: true }}
-                className="mb-12"
+                animate={{ opacity: 1, y: 0 }}
               >
-                <h2 className="text-4xl font-bold text-gray-900 mb-4">
-                  Latest <span className="text-yellow-500">Articles</span>
+                <h2 className="text-3xl font-bold text-gray-900 mb-8">
+                  {selectedCategory === 'all' ? 'All Articles' : selectedCategory}
                 </h2>
-                <p className="text-xl text-gray-600">
-                  Stay updated with the latest trends and insights in industrial construction
-                </p>
-              </motion.div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {blogPosts.map((post, index) => (
-                  <motion.article
-                    key={post.id}
-                    initial={{ opacity: 0, y: 60 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: index * 0.1 }}
-                    viewport={{ once: true }}
-                    whileHover={{ y: -5 }}
-                    className="bg-white rounded-2xl shadow-lg hover:shadow-xl border border-gray-100 overflow-hidden transition-all duration-300 group"
-                  >
-                    <div className="relative h-48 bg-gradient-to-br from-gray-800 to-gray-900 overflow-hidden">
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className={`w-16 h-16 bg-gradient-to-r ${post.color} rounded-2xl flex items-center justify-center text-white group-hover:scale-110 transition-transform duration-300`}>
-                          <BookOpen className="w-8 h-8" />
-                        </div>
-                      </div>
+                
+                {filteredBlogs.length === 0 ? (
+                  <div className="text-center py-16">
+                    <div className="w-24 h-24 bg-gradient-to-r from-gray-200 to-gray-300 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <Search className="w-10 h-10 text-gray-400" />
                     </div>
-
-                    <div className="p-6">
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-yellow-600 font-semibold text-sm">{post.category}</span>
-                        <span className="text-gray-500 text-sm flex items-center">
-                          <Calendar className="w-4 h-4 mr-1" />
-                          {post.date}
-                        </span>
-                      </div>
-
-                      <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-yellow-600 transition-colors line-clamp-2">
-                        {post.title}
-                      </h3>
-
-                      <p className="text-gray-600 text-sm mb-4 leading-relaxed line-clamp-3">
-                        {post.excerpt}
-                      </p>
-
-                      <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                        <div className="flex items-center space-x-4 text-xs text-gray-500">
-                          <div className="flex items-center space-x-1">
-                            <Clock className="w-3 h-3" />
-                            <span>{post.readTime}</span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <Eye className="w-3 h-3" />
-                            <span>{post.views}</span>
-                          </div>
-                        </div>
-
-                        <motion.div
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
+                    <h3 className="text-2xl font-bold text-gray-900 mb-4">No articles found</h3>
+                    <p className="text-gray-600 max-w-md mx-auto">
+                      Try adjusting your search terms or browse different categories.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                      {filteredBlogs.slice(0, visibleBlogs).map((blog, index) => (
+                        <motion.article
+                          key={blog._id}
+                          initial={{ opacity: 0, y: 60 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.6, delay: index * 0.1 }}
+                          whileHover={{ y: -5 }}
+                          className="bg-white rounded-2xl shadow-lg hover:shadow-xl border border-gray-100 overflow-hidden transition-all duration-300 group cursor-pointer"
                         >
-                          <Link
-                            to={`/blog/${post.id}`}
-                            className="inline-flex items-center space-x-1 text-yellow-600 hover:text-yellow-700 font-semibold text-sm transition-colors duration-200"
-                          >
-                            <span>Read</span>
-                            <ArrowRight className="w-3 h-3" />
+                          <Link to={`/blog/${blog.slug}`}>
+                            <div className="relative h-48 bg-gradient-to-br from-gray-800 to-gray-900 overflow-hidden">
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <div className={`w-16 h-16 bg-gradient-to-r ${getCategoryColor(blog.category)} rounded-2xl flex items-center justify-center text-white group-hover:scale-110 transition-transform duration-300`}>
+                                  <BookOpen className="w-8 h-8" />
+                                </div>
+                              </div>
+                              <div className="absolute top-4 left-4">
+                                <span className="bg-black/50 text-white px-2 py-1 rounded-full text-xs font-medium backdrop-blur-sm">
+                                  {blog.category}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="p-6">
+                              <div className="flex items-center justify-between mb-3">
+                                <span className="text-yellow-600 font-semibold text-sm">{blog.category}</span>
+                                <span className="text-gray-500 text-sm flex items-center">
+                                  <Calendar className="w-4 h-4 mr-1" />
+                                  {formatDate(blog.publishedAt)}
+                                </span>
+                              </div>
+
+                              <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-yellow-600 transition-colors line-clamp-2">
+                                {blog.title}
+                              </h3>
+
+                              <p className="text-gray-600 text-sm mb-4 leading-relaxed line-clamp-3">
+                                {blog.excerpt}
+                              </p>
+
+                              <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                                <div className="flex items-center space-x-4 text-xs text-gray-500">
+                                  <div className="flex items-center space-x-1">
+                                    <Clock className="w-3 h-3" />
+                                    <span>{blog.readingTime} min</span>
+                                  </div>
+                                  <div className="flex items-center space-x-1">
+                                    <Eye className="w-3 h-3" />
+                                    <span>{blog.views}</span>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center space-x-1 text-yellow-600 font-semibold text-sm group-hover:translate-x-1 transition-transform duration-200">
+                                  <span>Read</span>
+                                  <ArrowRight className="w-3 h-3" />
+                                </div>
+                              </div>
+                            </div>
                           </Link>
-                        </motion.div>
-                      </div>
+                        </motion.article>
+                      ))}
                     </div>
-                  </motion.article>
-                ))}
-              </div>
+
+                    {/* Load More Button */}
+                    {visibleBlogs < filteredBlogs.length && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-center mt-12"
+                      >
+                        <button
+                          onClick={loadMoreBlogs}
+                          className="bg-gradient-to-r from-yellow-500 to-orange-500 text-gray-900 font-bold px-8 py-4 rounded-xl hover:from-yellow-600 hover:to-orange-600 transition-all duration-300 transform hover:scale-105 shadow-lg"
+                        >
+                          Load More Articles
+                        </button>
+                      </motion.div>
+                    )}
+                  </>
+                )}
+              </motion.div>
             </div>
 
             {/* Sidebar */}
-            <div className="lg:col-span-1">
-              {/* Categories */}
-              <motion.div
-                initial={{ opacity: 0, x: 60 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6 }}
-                viewport={{ once: true }}
-                className="bg-white rounded-2xl shadow-lg p-6 mb-8"
-              >
-                <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
-                  <Tag className="w-5 h-5 mr-2 text-yellow-500" />
-                  Categories
-                </h3>
-                <div className="space-y-3">
-                  {categories.map((category, index) => (
-                    <motion.div
-                      key={index}
-                      whileHover={{ x: 5 }}
-                      className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors duration-200 cursor-pointer"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-3 h-3 bg-gradient-to-r ${category.color} rounded-full`}></div>
-                        <span className="text-gray-700 font-medium">{category.name}</span>
-                      </div>
-                      <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs font-semibold">
-                        {category.count}
-                      </span>
-                    </motion.div>
-                  ))}
-                </div>
-              </motion.div>
-
-              {/* Popular Posts */}
-              <motion.div
-                initial={{ opacity: 0, x: 60 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                viewport={{ once: true }}
-                className="bg-white rounded-2xl shadow-lg p-6"
-              >
-                <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
-                  <TrendingUp className="w-5 h-5 mr-2 text-yellow-500" />
-                  Popular Posts
-                </h3>
-                <div className="space-y-4">
-                  {popularPosts.map((post, index) => (
-                    <motion.div
-                      key={post.id}
-                      whileHover={{ x: 5 }}
-                      className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors duration-200 cursor-pointer group"
-                    >
-                      <div className={`w-12 h-12 bg-gradient-to-r ${post.color} rounded-lg flex items-center justify-center text-white flex-shrink-0 group-hover:scale-110 transition-transform duration-300`}>
-                        <BookOpen className="w-6 h-6" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-semibold text-gray-900 line-clamp-2 group-hover:text-yellow-600 transition-colors">
-                          {post.title}
-                        </h4>
-                        <div className="flex items-center space-x-2 mt-1 text-xs text-gray-500">
-                          <Eye className="w-3 h-3" />
-                          <span>{post.views} views</span>
+            <div className="lg:w-1/4">
+              <div className="space-y-8 sticky top-8">
+                {/* Categories */}
+                <motion.div
+                  initial={{ opacity: 0, x: 40 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="bg-white rounded-2xl shadow-lg p-6"
+                >
+                  <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
+                    <Tag className="w-5 h-5 mr-2 text-yellow-500" />
+                    Categories
+                  </h3>
+                  <div className="space-y-3">
+                    {categories.map((category, index) => (
+                      <motion.button
+                        key={category}
+                        whileHover={{ x: 5 }}
+                        onClick={() => setSelectedCategory(category)}
+                        className={`flex items-center justify-between w-full p-3 rounded-xl transition-all duration-200 ${
+                          selectedCategory === category
+                            ? 'bg-yellow-50 text-yellow-700 border border-yellow-200'
+                            : 'hover:bg-gray-50 text-gray-700'
+                        }`}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className={`w-3 h-3 rounded-full bg-gradient-to-r ${
+                            selectedCategory === category 
+                              ? 'from-yellow-500 to-orange-500' 
+                              : getCategoryColor(category)
+                          }`}></div>
+                          <span className="font-medium capitalize">
+                            {category === 'all' ? 'All Categories' : category}
+                          </span>
                         </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </motion.div>
+                        <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs font-semibold">
+                          {category === 'all' 
+                            ? blogs.length 
+                            : blogs.filter(b => b.category === category).length
+                          }
+                        </span>
+                      </motion.button>
+                    ))}
+                  </div>
+                </motion.div>
+
+                {/* Popular Posts */}
+                <motion.div
+                  initial={{ opacity: 0, x: 40 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="bg-white rounded-2xl shadow-lg p-6"
+                >
+                  <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
+                    <TrendingUp className="w-5 h-5 mr-2 text-yellow-500" />
+                    Popular Posts
+                  </h3>
+                  <div className="space-y-4">
+                    {blogs
+                      .sort((a, b) => b.views - a.views)
+                      .slice(0, 5)
+                      .map((blog, index) => (
+                      <motion.div
+                        key={blog._id}
+                        whileHover={{ x: 5 }}
+                        className="flex items-start space-x-3 p-3 rounded-xl hover:bg-gray-50 transition-all duration-200 cursor-pointer group"
+                      >
+                        <div className={`w-12 h-12 bg-gradient-to-r ${getCategoryColor(blog.category)} rounded-xl flex items-center justify-center text-white flex-shrink-0 group-hover:scale-110 transition-transform duration-300`}>
+                          <BookOpen className="w-6 h-6" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <Link to={`/blog/${blog.slug}`}>
+                            <h4 className="text-sm font-semibold text-gray-900 line-clamp-2 group-hover:text-yellow-600 transition-colors mb-1">
+                              {blog.title}
+                            </h4>
+                          </Link>
+                          <div className="flex items-center space-x-2 text-xs text-gray-500">
+                            <Eye className="w-3 h-3" />
+                            <span>{blog.views} views</span>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </motion.div>
+
+                {/* Newsletter */}
+                <motion.div
+                  initial={{ opacity: 0, x: 40 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl shadow-lg p-6 text-white"
+                >
+                  <h3 className="text-xl font-bold mb-4">Stay Updated</h3>
+                  <p className="text-gray-300 text-sm mb-4 leading-relaxed">
+                    Get the latest construction insights and industry trends delivered to your inbox.
+                  </p>
+                  <form className="space-y-3">
+                    <input
+                      type="email"
+                      placeholder="Enter your email"
+                      required
+                      className="w-full px-4 py-3 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-500 placeholder-gray-500 text-sm"
+                    />
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      type="submit"
+                      className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-gray-900 font-bold py-3 rounded-xl hover:from-yellow-600 hover:to-orange-600 transition-all duration-300 text-sm"
+                    >
+                      Subscribe Now
+                    </motion.button>
+                  </form>
+                </motion.div>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-gray-900 to-gray-800">
-        <div className="container mx-auto px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-            className="text-center text-white"
-          >
-            <h2 className="text-4xl lg:text-5xl font-bold mb-6">
-              Stay <span className="text-yellow-500">Updated</span>
-            </h2>
-            <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-              Subscribe to our newsletter for the latest construction insights, industry trends, and expert knowledge.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Link
-                to="/contact"
-                className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold px-8 py-4 rounded-lg text-lg transition-all duration-300 transform hover:scale-105 flex items-center space-x-2"
-              >
-                <Phone className="w-5 h-5" />
-                <span>Call: +91 8292111172</span>
-              </Link>
-              <Link
-                to="/contact"
-                className="border-2 border-white text-white hover:bg-white hover:text-gray-900 font-bold px-8 py-4 rounded-lg text-lg transition-all duration-300 transform hover:scale-105 flex items-center space-x-2"
-              >
-                <Mail className="w-5 h-5" />
-                <span>Email: jyadavst@gmail.com</span>
-              </Link>
-            </div>
-          </motion.div>
         </div>
       </section>
     </div>
