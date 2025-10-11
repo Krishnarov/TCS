@@ -163,7 +163,7 @@ const Blog = () => {
               variants={fadeInUp}
               className="text-xl text-gray-300 leading-relaxed mb-8"
             >
-              Expert insights, industry trends, and technical knowledge from Triveni Construction Solution - 
+              Expert insights, industry trends, and technical knowledge from TRIVENI INFRA MECH PVT LTD - 
               Your trusted partner in industrial construction and engineering excellence.
             </motion.p>
 

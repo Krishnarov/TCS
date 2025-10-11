@@ -208,7 +208,7 @@ const AdminLayout = () => {
         {/* Footer */}
         <footer className="bg-white border-t border-gray-200 py-4 px-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between text-sm text-gray-600">
-            <p>© 2023 Triveni Construction Solution. All rights reserved.</p>
+            <p>© 2023 TRIVENI INFRA MECH PVT LTD. All rights reserved.</p>
             <p className="mt-2 lg:mt-0">
               Admin Panel v1.0 • Secure Access
             </p>

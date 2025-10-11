@@ -91,7 +91,7 @@ const AdminLogin = () => {
               transition={{ duration: 0.5, delay: 0.3 }}
               className="text-yellow-900 font-medium"
             >
-              Triveni Construction Solution
+              TRIVENI INFRA MECH PVT LTD
             </motion.p>
           </div>
 
@@ -210,7 +210,7 @@ const AdminLogin = () => {
           className="text-center mt-8"
         >
           <p className="text-sm text-gray-400">
-            © 2023 Triveni Construction Solution. All rights reserved.
+            © 2023 TRIVENI INFRA MECH PVT LTD. All rights reserved.
           </p>
         </motion.div>
       </motion.div>

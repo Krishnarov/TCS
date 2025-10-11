@@ -103,7 +103,7 @@ const Navbar = () => {
                   TRIVENI
                 </h1>
                 <p className="text-sm text-gray-600 font-medium tracking-wider">
-                  CONSTRUCTION SOLUTION
+                  INFRA MECH PVT LTD
                 </p>
               </div>
             </Link>

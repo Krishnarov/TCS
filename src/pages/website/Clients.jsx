@@ -90,7 +90,7 @@ const Clients = () => {
     {
       client: 'SUZLON Project Manager',
       position: 'Wind Energy Division',
-      text: 'Triveni Construction Solution delivered exceptional structural work for our wind turbine foundations. Their precision and commitment to safety standards were impressive.',
+      text: 'TRIVENI INFRA MECH PVT LTD delivered exceptional structural work for our wind turbine foundations. Their precision and commitment to safety standards were impressive.',
       rating: 5
     },
     {
@@ -373,7 +373,7 @@ const Clients = () => {
               What Our Clients <span className="text-yellow-500">Say</span>
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Hear from our valued partners about their experience working with Triveni Construction Solution
+              Hear from our valued partners about their experience working with TRIVENI INFRA MECH PVT LTD
             </p>
           </motion.div>
 
@@ -504,7 +504,7 @@ const Clients = () => {
               Ready to Join Our <span className="text-yellow-500">Client Family</span>?
             </h2>
             <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-              Experience the Triveni Construction Solution difference. Let's build something great together.
+              Experience the TRIVENI INFRA MECH PVT LTD difference. Let's build something great together.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link

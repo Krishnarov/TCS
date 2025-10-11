@@ -38,7 +38,7 @@ const OurTeam = () => {
     {
       name: 'Jitendra Yadav',
       position: 'Director & Founder',
-      description: 'Leading Triveni Construction Solution with 15+ years of expertise in industrial construction, fabrication, and project management. Visionary leader with a focus on innovation and client satisfaction.',
+      description: 'Leading TRIVENI INFRA MECH PVT LTD with 15+ years of expertise in industrial construction, fabrication, and project management. Visionary leader with a focus on innovation and client satisfaction.',
       experience: '15+ Years Experience',
       specialization: 'Industrial Construction & Project Management',
       email: 'jyadavst@gmail.com',
@@ -236,7 +236,7 @@ const OurTeam = () => {
 
               <div className="space-y-6 text-lg text-gray-600 leading-relaxed mb-8">
                 <p>
-                  <strong>Jitendra Yadav</strong> leads Triveni Construction Solution with a vision 
+                  <strong>Jitendra Yadav</strong> leads TRIVENI INFRA MECH PVT LTD with a vision 
                   to deliver world-class construction services that exceed client expectations. 
                   With over <strong>15 years of hands-on experience</strong> in the industrial 
                   construction sector, he brings unparalleled expertise and commitment to every project.

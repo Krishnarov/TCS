@@ -164,16 +164,15 @@ const Home = () => {
                 variants={fadeInUp}
                 className="text-5xl lg:text-7xl font-bold leading-tight mb-6"
               >
-                Triveni
-                <span className="text-yellow-500 block">Construction</span>
-                Solution
+                TRIVENI
+                <span className="text-yellow-500 block">INFRA MECH PVT LTD</span>
               </motion.h1>
 
               <motion.p
                 variants={fadeInUp}
                 className="text-xl text-gray-300 mb-8 leading-relaxed"
               >
-                At Triveni Construction Solution, we specialize in delivering innovative and high-quality 
+                At TRIVENI INFRA MECH PVT LTD, we specialize in delivering innovative and high-quality 
                 construction services tailored to meet the diverse needs of industrial and structural sectors.
               </motion.p>
 
@@ -301,7 +300,7 @@ const Home = () => {
                 We Are <span className="text-yellow-500">Different</span>
               </h2>
               <p className="text-lg text-gray-600 mb-6 leading-relaxed">
-                At Triveni Construction Solution, we specialize in delivering innovative and high-quality 
+                At TRIVENI INFRA MECH PVT LTD, we specialize in delivering innovative and high-quality 
                 construction services tailored to meet the diverse needs of the industrial and structural sectors. 
                 With a commitment to precision, safety, and efficiency, we are a one-stop solution for all 
                 fabrication, erection, and maintenance projects.

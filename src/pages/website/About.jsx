@@ -92,7 +92,7 @@ const About = () => {
     {
       name: 'Jitendra Yadav',
       position: 'Director',
-      description: 'Leading Triveni Construction Solution with vision and expertise in industrial construction.',
+      description: 'Leading TRIVENI INFRA MECH PVT LTD with vision and expertise in industrial construction.',
       experience: '15+ Years'
     }
   ];
@@ -161,7 +161,7 @@ const About = () => {
 
               <div className="space-y-6 text-lg text-gray-600 leading-relaxed">
                 <p>
-                  At <strong>Triveni Construction Solution</strong>, we specialize in delivering innovative and 
+                  At <strong>TRIVENI INFRA MECH PVT LTD</strong>, we specialize in delivering innovative and 
                   high-quality construction services tailored to meet the diverse needs of the industrial and 
                   structural sectors.
                 </p>
@@ -483,7 +483,7 @@ const About = () => {
               Ready to Work <span className="text-yellow-500">With Us</span>?
             </h2>
             <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-              Let's discuss how Triveni Construction Solution can help bring your project to life with excellence and precision.
+              Let's discuss how TRIVENI INFRA MECH PVT LTD can help bring your project to life with excellence and precision.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link

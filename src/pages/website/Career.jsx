@@ -193,7 +193,7 @@ const Career = () => {
               variants={fadeInUp}
               className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed"
             >
-              Join Triveni Construction Solution and be part of a dynamic team
+              Join TRIVENI INFRA MECH PVT LTD and be part of a dynamic team
               building India's industrial infrastructure with innovation and
               excellence.
             </motion.p>
@@ -511,7 +511,7 @@ const Career = () => {
               Ready to <span className="text-yellow-500">Join Us</span>?
             </h2>
             <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-              Start your journey with Triveni Construction Solution and build a
+              Start your journey with TRIVENI INFRA MECH PVT LTD and build a
               rewarding career in the construction industry.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
